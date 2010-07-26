@@ -543,6 +543,7 @@ class Omapi:
 		@param key: if given, it must be base64 encoded
 		@raises binascii.Error: for bad base64 encoding
 		@raises socket.error:
+		@raises OmapiError:
 		"""
 		self.hostname = hostname
 		self.port = port
