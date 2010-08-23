@@ -47,14 +47,17 @@ def repr_opcode(opcode):
 			6: "delete"}
 	return opmap.get(opcode, "unknown")
 
+__all__.append("OmapiError")
 class OmapiError(Exception):
 	"""OMAPI exception base class."""
 
+__all__.append("OmapiSizeLimitError")
 class OmapiSizeLimitError(OmapiError):
 	"""Packet size limit reached."""
 	def __init__(self):
 		OmapiError.__init__(self, "Packet size limit reached.")
 
+__all__.append("OmapiErrorNotFound")
 class OmapiErrorNotFound(OmapiError):
 	"""Not found."""
 	def __init__(self):
