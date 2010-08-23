@@ -730,15 +730,14 @@ class Omapi:
 		@raises OmapiError:
 		@raises socket.error:
 		"""
-		# FIXME: test whether this code works
 		msg = OmapiMessage.open("host")
-		msg.obj.append(("create", struct.pack("!I", 1)))
-		msg.obj.append(("exclusive", struct.pack("!I", 1)))
+		msg.message.append(("create", struct.pack("!I", 1)))
+		msg.message.append(("exclusive", struct.pack("!I", 1)))
 		msg.obj.append(("hardware-address", pack_mac(mac)))
 		msg.obj.append(("hardware-type", struct.pack("!I", 1)))
 		msg.obj.append(("ip-address", pack_ip(ip)))
 		response = self.query_server(msg)
-		if response.opcode != OMAPI_OP_NOTIFY:
+		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError("add failed")
 
 	def del_host(self, mac):
@@ -748,7 +747,6 @@ class Omapi:
 		@raises OmapiError:
 		@raises socket.error:
 		"""
-		# FIXME: test whether this code works
 		msg = OmapiMessage.open("host")
 		msg.obj.append(("hardware-address", pack_mac(mac)))
 		msg.obj.append(("hardware-type", struct.pack("!I", 1)))
@@ -758,7 +756,7 @@ class Omapi:
 		if response.handle == 0:
 			raise OmapiError("received invalid handle from server")
 		response = self.query_server(OmapiMessage.delete(response.handle))
-		if response.opcode != OMAPI_OP_NOTIFY:
+		if response.opcode != OMAPI_OP_STATUS:
 			raise OmapiError("delete failed")
 
 	def lookup_ip(self, mac):
