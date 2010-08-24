@@ -1,0 +1,10 @@
+Format-Specification: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?op=file&rev=135
+Name: pypureomapi
+Maintainer: Torge Szczepanek <info@cygnusnetworks.de>
+Source: http://code.google.com/p/pypureomapi/
+
+Files: *
+Copyright: 2010, Torge Szczepanek <info@cygnusnetworks.de>
+           2010, Helmut Grohne <h.grohne@cygnusnetworks.de>
+License: GPL-3
+ See /usr/share/common-licenses/GPL-3
