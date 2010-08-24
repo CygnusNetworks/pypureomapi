@@ -4,7 +4,6 @@ Maintainer: Torge Szczepanek <info@cygnusnetworks.de>
 Source: http://code.google.com/p/pypureomapi/
 
 Files: *
-Copyright: 2010, Torge Szczepanek <info@cygnusnetworks.de>
-           2010, Helmut Grohne <h.grohne@cygnusnetworks.de>
+Copyright: 2010, Cygnus Networks GmbH <info@cygnusnetworks.de>
 License: GPL-3
  See /usr/share/common-licenses/GPL-3
