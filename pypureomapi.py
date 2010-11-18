@@ -2,21 +2,23 @@
 # -*- coding: utf8 -*-
 
 """
-Message format:
-
-authid (netint32)
-authlen (netint32)
-opcode (netint32)
-handle (netint32)
-tid (netint32)
-rid (netint32)
-message (dictionary)
-object (dictionary)
-signature (length is authlen)
-
-dictionary = entry* 0x00 0x00
-entry = key (net16str) value (net32str)
+For an example see http://code.google.com/p/pypureomapi/wiki/Example.
 """
+
+# Message format:
+# 
+# authid (netint32)
+# authlen (netint32)
+# opcode (netint32)
+# handle (netint32)
+# tid (netint32)
+# rid (netint32)
+# message (dictionary)
+# object (dictionary)
+# signature (length is authlen)
+# 
+# dictionary = entry* 0x00 0x00
+# entry = key (net16str) value (net32str)
 
 __author__      = "Helmut Grohne, Torge Szczepanek"
 __copyright__   = "Cygnus Networks GmbH"
@@ -590,6 +592,12 @@ class Omapi:
 			raise OmapiError("not connected")
 
 	def recv_conn(self, length):
+		"""Receive up to length bytes of data from the connection.
+
+		@type length: int
+		@raises OmapiError: if not connected
+		@raises socket.error:
+		"""
 		self.check_connected()
 		try:
 			return self.connection.recv(length)
@@ -598,6 +606,12 @@ class Omapi:
 			raise
 
 	def send_conn(self, data):
+		"""Send all of data to the connection.
+
+		@type data: str
+		@raises OmapiError: if not connected
+		@raises socket.error:
+		"""
 		self.check_connected()
 		try:
 			self.connection.sendall(data)
@@ -669,6 +683,7 @@ class Omapi:
 		"""Read the response for the given message.
 		@type message: OmapiMessage
 		@type insecure: bool
+		@param insecure: avoid an OmapiError about a wrong authenticator
 		@rtype: OmapiMessage
 		@raises OmapiError:
 		@raises socket.error:
