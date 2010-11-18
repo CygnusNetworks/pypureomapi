@@ -412,23 +412,19 @@ class InBuffer:
 		entries = []
 		try:
 			while True:
-				key = None
 				for key in self.parse_net16string():
 					if key is None:
 						yield None
 					elif not key:
 						raise StopIteration()
 					else:
+						for value in self.parse_net32string():
+							if value is None:
+								yield None
+							else:
+								entries.append((key, value))
+								break
 						break
-				assert key is not None
-				value = None
-				for value in self.parse_net32string():
-					if value is None:
-						yield None
-					else:
-						break
-				assert value is not None
-				entries.append((key, value))
 		# Abusing StopIteration here, since nothing should be throwing
 		# it at us.
 		except StopIteration:
