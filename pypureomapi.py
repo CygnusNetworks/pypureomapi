@@ -56,7 +56,7 @@ def repr_opcode(opcode):
 	"""
 	opmap = {1: "open", 2: "refresh", 3: "update", 4: "notify", 5: "status",
 			6: "delete"}
-	return opmap.get(opcode, "unknown")
+	return opmap.get(opcode, "unknown (%d)" % opcode)
 
 __all__.append("OmapiError")
 class OmapiError(Exception):
