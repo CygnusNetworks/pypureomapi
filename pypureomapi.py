@@ -34,6 +34,7 @@ import hmac
 import socket
 import random
 import operator
+import sys
 try:
 	from cStringIO import StringIO
 except ImportError:
@@ -338,16 +339,20 @@ class OmapiMessage:
 		self.obj.extend(update.items())
 
 	def dump(self):
-		print "Omapi message attributes:"
-		print "authid:\t\t%d" % self.authid
-		print "authlen:\t%d" % len(self.signature)
-		print "opcode:\t\t%s" % repr_opcode(self.opcode)
-		print "handle:\t\t%d" % self.handle
-		print "tid:\t\t%d" % self.tid
-		print "rid:\t\t%d" % self.rid
-		print "message:\t%r" % self.message
-		print "obj:\t\t%r" % self.obj
-		print "signature:\t%r" % self.signature
+		"""
+		@rtype: str
+		@returns: a human readable representation of the message
+		"""
+		return "".join(("Omapi message attributes:\n",
+				"authid:\t\t%d\n" % self.authid,
+				"authlen:\t%d\n" % len(self.signature),
+				"opcode:\t\t%s\n" % repr_opcode(self.opcode),
+				"handle:\t\t%d\n" % self.handle,
+				"tid:\t\t%d\n" % self.tid,
+				"rid:\t\t%d\n" % self.rid,
+				"message:\t%r\n" % self.message,
+				"obj:\t\t%r\n" % self.obj,
+				"signature:\t%r\n" % self.signature))
 
 def parse_map(filterfun, parser):
 	"""
@@ -706,7 +711,7 @@ class Omapi:
 		response = self.receive_message()
 		if self.debug:
 			print "debug recv"
-			response.dump()
+			sys.stdout.write(response.dump())
 		if not response.is_response(message):
 			raise OmapiError("received message is not the desired response")
 		# signature already verified
@@ -728,7 +733,7 @@ class Omapi:
 			message.sign(self.authenticators[self.defauth])
 		if self.debug:
 			print "debug send"
-			message.dump()
+			sys.stdout.write(message.dump())
 		self.send_conn(message.as_string())
 
 	def query_server(self, message):
