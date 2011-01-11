@@ -697,6 +697,9 @@ class Omapi:
 				if not message.verify(self.authenticators):
 					self.close()
 					raise OmapiError("bad omapi message signature")
+				if self.debug:
+					print "debug recv"
+					sys.stdout.write(message.dump())
 				return message
 
 	def receive_response(self, message, insecure=False):
@@ -709,9 +712,6 @@ class Omapi:
 		@raises socket.error:
 		"""
 		response = self.receive_message()
-		if self.debug:
-			print "debug recv"
-			sys.stdout.write(response.dump())
 		if not response.is_response(message):
 			raise OmapiError("received message is not the desired response")
 		# signature already verified
