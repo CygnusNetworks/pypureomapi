@@ -165,7 +165,14 @@ class OutBuffer:
 		return self
 
 class OmapiAuthenticatorBase:
-	"""Base class for OMAPI authenticators."""
+	"""Base class for OMAPI authenticators.
+	@cvar authlen: is the length of a signature as returned by the sign method
+	@type authlen: int
+	@cvar algorithm: is a textual name for the algorithm
+	@type algorithm: str or None
+	@ivar authid: is the authenticator id as assigned during the handshake
+	@type authid: int
+	"""
 	authlen = -1 # must be overwritten
 	algorithm = None
 	authid = -1 # will be an instance attribute
