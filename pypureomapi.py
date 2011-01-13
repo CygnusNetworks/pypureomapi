@@ -42,6 +42,8 @@ except ImportError:
 
 sysrand = random.SystemRandom()
 
+__all__.extend("OMAPI_OP_OPEN OMAPI_OP_REFRESH OMAPI_OP_UPDATE".split())
+__all__.extend("OMAPI_OP_NOTIFY OMAPI_OP_STATUS OMAPI_OP_DELETE".split())
 OMAPI_OP_OPEN    = 1
 OMAPI_OP_REFRESH = 2
 OMAPI_OP_UPDATE  = 3
@@ -222,6 +224,7 @@ class OmapiHMACMD5Authenticator(OmapiAuthenticatorBase):
 	def sign(self, message):
 		return hmac.HMAC(self.key, message).digest()
 
+__all__.append("OmapiMessage")
 class OmapiMessage:
 	"""
 	@type authid: int
