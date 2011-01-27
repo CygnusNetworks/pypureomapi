@@ -496,7 +496,7 @@ def pack_ip(ipstr):
 	@rtype: str
 	@raises ValueError: for badly formatted ip addresses
 	"""
-	if not isinstance(ipstr, str):
+	if not isinstance(ipstr, basestring):
 		raise ValueError("given ip address is not a string")
 	parts = ipstr.split('.')
 	if len(parts) != 4:
@@ -542,7 +542,7 @@ def pack_mac(macstr):
 	@rtype: str
 	@raises ValueError: for badly formatted mac addresses
 	"""
-	if not isinstance(macstr, str):
+	if not isinstance(macstr, basestring):
 		raise ValueError("given mac addresses is not a string")
 	parts = macstr.split(":")
 	if len(parts) != 6:
