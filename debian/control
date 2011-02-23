@@ -10,7 +10,7 @@ XS-Python-Version: >= 2.5
 
 Package: python-pypureomapi
 Architecture: all
-Depends: python (>= 2.5), ${python:Depends}
+Depends: python (>= 2.5), ${python:Depends}, ${misc:Depends}
 XB-Python-Version: ${python:Versions}
 Description: ISC DHCP OMAPI protocol implementation in Python
  This module grew out of frustration about pyomapi and later pyomapic. The

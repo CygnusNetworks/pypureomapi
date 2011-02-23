@@ -1,8 +1,9 @@
 pypureomapi (0.1-2) UNRELEASED; urgency=low
 
   * Set debian/source/format to 1.0.
+  * Added missing (empty) ${misc:Depends} for debhelper.
 
- -- Helmut Grohne <h.grohne@cygnusnetworks.de>  Thu, 09 Dec 2010 16:42:52 +0100
+ -- Helmut Grohne <h.grohne@cygnusnetworks.de>  Wed, 23 Feb 2011 11:17:03 +0100
 
 pypureomapi (0.1-1) unstable; urgency=low
 
