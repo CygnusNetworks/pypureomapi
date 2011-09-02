@@ -52,7 +52,7 @@ OMAPI_OP_STATUS  = 5
 OMAPI_OP_DELETE  = 6
 
 def repr_opcode(opcode):
-	"""
+	"""Returns a textual representation for the given opcode.
 	@type opcode: int
 	@rtype: str
 	"""
@@ -117,6 +117,9 @@ class OutBuffer:
 
 	def add_net32string(self, string):
 		"""
+		>>> OutBuffer().add_net32string("x").getvalue()
+		'\\x00\\x00\\x00\\x01x'
+
 		@type string: str
 		@param string: maximum length must fit in a 32bit integer
 		@returns: self
@@ -128,6 +131,9 @@ class OutBuffer:
 
 	def add_net16string(self, string):
 		"""
+		>>> OutBuffer().add_net16string("x").getvalue()
+		'\\x00\\x01x'
+
 		@type string: str
 		@param string: maximum length must fit in a 16bit integer
 		@returns: self
@@ -160,6 +166,9 @@ class OutBuffer:
 
 	def consume(self, length):
 		"""
+		>>> OutBuffer().add("spam").consume(2).getvalue()
+		'am'
+
 		@type length: int
 		@returns: self
 		"""
@@ -365,7 +374,12 @@ class OmapiMessage:
 				"signature:\t%r\n" % self.signature))
 
 def parse_map(filterfun, parser):
-	"""
+	"""Creates a new parser that passes the result of the given parser through
+	the given filterfun.
+
+	>>> list(parse_map(int, (None, "42")))
+	[None, 42]
+
 	@type filterfun: obj -> obj
 	@param parser: parser
 	@returns: parser
@@ -378,7 +392,12 @@ def parse_map(filterfun, parser):
 			break
 
 def parse_chain(*args):
-	"""
+	"""Creates a new parser that executes the passed parsers (args) with the
+	previous results and yields a tuple of the results.
+
+	>>> list(parse_chain(lambda: (None, 1), lambda one: (None, 2)))
+	[None, None, (1, 2)]
+
 	@param args: parsers
 	@returns: parser
 	"""
@@ -394,19 +413,28 @@ def parse_chain(*args):
 
 class InBuffer:
 	sizelimit = 65536
-	def __init__(self):
+	def __init__(self, initial=""):
+		"""
+		@type initial: str
+		@param initial: initial value of the buffer
+		@raises OmapiSizeLimitError:
+		"""
 		self.buff = ""
 		self.totalsize = 0
+		if initial:
+			self.feed(initial)
 
 	def feed(self, data):
 		"""
 		@type data: str
+		@returns: self
 		@raises OmapiSizeLimitError:
 		"""
 		if self.totalsize + len(data) > self.sizelimit:
 			raise OmapiSizeLimitError()
 		self.buff += data
 		self.totalsize += len(data)
+		return self
 
 	def resetsize(self):
 		"""This method is to be called after handling a packet to
@@ -426,22 +454,43 @@ class InBuffer:
 		yield result
 
 	def parse_net16int(self):
+		"""
+		>>> hex(next(InBuffer("\\x01\\x02").parse_net16int()))
+		'0x102'
+		"""
 		return parse_map(lambda data: struct.unpack("!H", data)[0],
 				self.parse_fixedbuffer(2))
 
 	def parse_net32int(self):
+		"""
+		>>> hex(next(InBuffer("\\x01\\0\\0\\x02").parse_net32int()))
+		'0x1000002'
+		"""
 		return parse_map(lambda data: struct.unpack("!L", data)[0],
 				self.parse_fixedbuffer(4))
 
 	def parse_net16string(self):
+		"""
+		>>> next(InBuffer("\\0\\x03eggs").parse_net16string())
+		'egg'
+		"""
 		return parse_map(operator.itemgetter(1),
 				parse_chain(self.parse_net16int, self.parse_fixedbuffer))
 
 	def parse_net32string(self):
+		"""
+		>>> next(InBuffer("\\0\\0\\0\\x03eggs").parse_net32string())
+		'egg'
+		"""
 		return parse_map(operator.itemgetter(1),
 				parse_chain(self.parse_net32int, self.parse_fixedbuffer))
 
 	def parse_bindict(self):
+		"""
+		>>> d = "\\0\\x01a\\0\\0\\0\\x01b\\0\\0spam"
+		>>> next(InBuffer(d).parse_bindict())
+		[('a', 'b')]
+		"""
 		entries = []
 		try:
 			while True:
