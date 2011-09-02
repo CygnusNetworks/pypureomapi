@@ -404,10 +404,10 @@ class InBuffer:
 		@type data: str
 		@raises OmapiSizeLimitError:
 		"""
+		if self.totalsize + len(data) > self.sizelimit:
+			raise OmapiSizeLimitError()
 		self.buff += data
 		self.totalsize += len(data)
-		if self.totalsize > self.sizelimit:
-			raise OmapiSizeLimitError()
 
 	def resetsize(self):
 		"""This method is to be called after handling a packet to
