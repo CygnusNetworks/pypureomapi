@@ -397,7 +397,6 @@ class InBuffer:
 	def __init__(self):
 		self.buff = ""
 		self.totalsize = 0
-		self.parsing = None
 
 	def feed(self, data):
 		"""
