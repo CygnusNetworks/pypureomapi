@@ -160,6 +160,9 @@ class OutBuffer:
 
 	def getvalue(self):
 		"""
+		>>> OutBuffer().add("sp").add("am").getvalue()
+		'spam'
+
 		@rtype: str
 		"""
 		return self.buff.getvalue()
@@ -231,6 +234,15 @@ class OmapiHMACMD5Authenticator(OmapiAuthenticatorBase):
 		return dict(name=self.user, algorithm=self.algorithm)
 
 	def sign(self, message):
+		"""
+		>>> authlen = OmapiHMACMD5Authenticator.authlen
+		>>> len(OmapiHMACMD5Authenticator("foo", 16*"x").sign("baz")) == authlen
+		True
+
+		@type message: str
+		@rtype: str
+		@returns: a signature of length self.authlen
+		"""
 		return hmac.HMAC(self.key, message).digest()
 
 __all__.append("OmapiMessage")
@@ -282,11 +294,18 @@ class OmapiMessage:
 			self.generate_tid()
 
 	def generate_tid(self):
-		"""Generate a random transmission id for this OMAPI message."""
+		"""Generate a random transmission id for this OMAPI message.
+
+		>>> OmapiMessage(tid=-1).tid != OmapiMessage(tid=-1).tid
+		True
+		"""
 		self.tid = sysrand.randrange(0, 1<<32)
 
 	def as_string(self, forsigning=False):
 		"""
+		>>> len(OmapiMessage().as_string(True)) >= 24
+		True
+
 		@type forsigning: bool
 		@rtype: str
 		@raises OmapiSizeLimitError:
