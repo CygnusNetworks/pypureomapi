@@ -38,7 +38,7 @@ import sys
 try:
 	from cStringIO import StringIO
 except ImportError:
-	import StringIO
+	from StringIO import StringIO
 
 sysrand = random.SystemRandom()
 
