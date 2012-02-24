@@ -371,6 +371,14 @@ class OmapiMessage:
 		return cls(opcode=OMAPI_OP_OPEN, message=[("type", typename)], tid=-1)
 
 	@classmethod
+	def update(cls, handle):
+		"""Create an OMAPI update message for the given handle.
+		@type handle: int
+		@rytpe: OmapiMessage
+		"""
+		return cls(opcode=OMAPI_OP_UPDATE, handle=handle, tid=-1)
+
+	@classmethod
 	def delete(cls, handle):
 		"""Create an OMAPI delete message for given handle.
 		@type handle: int
