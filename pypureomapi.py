@@ -40,7 +40,7 @@ For an example see http://code.google.com/p/pypureomapi/wiki/Example.
 __author__      = "Helmut Grohne, Torge Szczepanek"
 __copyright__   = "Cygnus Networks GmbH"
 __licence__     = "GPL-3"
-__version__     = "0.1"
+__version__     = "0.2"
 __maintainer__  = "Torge Szczepanek"
 __email__       = "info@cygnusnetworks.de"
 
