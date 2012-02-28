@@ -206,6 +206,47 @@ class OutBuffer:
 		self.buff = StringIO(self.getvalue()[length:])
 		return self
 
+class OmapiStartupMessage:
+	"""Class describing the protocol negotiation messages."""
+	implemented_protocol_version = 100
+	implemented_header_size = 4 * 6
+
+	def __init__(self, protocol_version=None, header_size=None):
+		"""
+		@type protocol_version: int or None
+		@type header_size: int or None
+		"""
+		if protocol_version is None:
+			protocol_version = self.implemented_protocol_version
+		if header_size is None:
+			header_size = self.implemented_header_size
+		self.protocol_version = protocol_version
+		self.header_size = header_size
+
+	def validate(self):
+		"""Checks whether this OmapiStartupMessage matches the implementation.
+		@raises OmapiError:
+		"""
+		if self.implemented_protocol_version != self.protocol_version:
+			raise OmapiError("protocol mismatch")
+		if self.implemented_header_size != self.header_size:
+			raise OmapiError("header size mismatch")
+
+	def as_string(self):
+		"""
+		@rtype: str
+		"""
+		ret = OutBuffer()
+		self.serialize(ret)
+		return ret.getvalue()
+
+	def serialize(self, outbuffer):
+		"""Serialize this OmapiStartupMessage to the given outbuffer.
+		@type outbuffer: OutBuffer
+		"""
+		outbuffer.add_net32int(self.protocol_version)
+		outbuffer.add_net32int(self.header_size)
+
 class OmapiAuthenticatorBase:
 	"""Base class for OMAPI authenticators.
 	@cvar authlen: is the length of a signature as returned by the sign method
@@ -576,13 +617,14 @@ class InBuffer:
 			yield entries
 
 	def parse_startup_message(self):
-		"""results in (version, headersize)
+		"""results in an OmapiStartupMessage
 
 		>>> d = "\\0\\0\\0\\x64\\0\\0\\0\\x18"
-		>>> next(InBuffer(d).parse_startup_message())
-		(100, 24)
+		>>> next(InBuffer(d).parse_startup_message()).validate()
 		"""
-		return parse_chain(self.parse_net32int, lambda _: self.parse_net32int())
+		return parse_map(lambda args: OmapiStartupMessage(*args),
+				parse_chain(self.parse_net32int,
+					lambda _: self.parse_net32int()))
 
 	def parse_message(self):
 		"""results in an OmapiMessage"""
@@ -691,8 +733,6 @@ def unpack_mac(sixbytes):
 
 __all__.append("Omapi")
 class Omapi:
-	protocol_version = 100
-
 	def __init__(self, hostname, port, username=None, key=None, debug=False):
 		"""
 		@type hostname: str
@@ -787,10 +827,7 @@ class Omapi:
 		@raises socket.error:
 		"""
 		self.check_connected()
-		buff = OutBuffer()
-		buff.add_net32int(self.protocol_version)
-		buff.add_net32int(4*6) # header size
-		self.send_conn(buff.getvalue())
+		self.send_conn(OmapiStartupMessage().as_string())
 
 	def recv_protocol_initialization(self):
 		"""
@@ -802,13 +839,11 @@ class Omapi:
 				self.fill_inbuffer()
 			else:
 				self.inbuffer.resetsize()
-				protocol_version, header_size = result
-				if protocol_version != self.protocol_version:
+				try:
+					result.validate()
+				except OmapiError:
 					self.close()
-					raise OmapiError("protocol mismatch")
-				if header_size != 4*6:
-					self.close()
-					raise OmapiError("header size mismatch")
+					raise
 
 	def receive_message(self):
 		"""Read the next message from the connection.
