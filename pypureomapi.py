@@ -329,6 +329,24 @@ class OmapiMessage:
 		"""
 		self.tid = sysrand.randrange(0, 1<<32)
 
+	def serialize(self, outbuffer, forsigning=False):
+		"""
+		@type outbuffer: OutBuffer
+		@type forsigning: bool
+		@raises OmapiSizeLimitError:
+		"""
+		if not forsigning:
+			outbuffer.add_net32int(self.authid)
+		outbuffer.add_net32int(len(self.signature))
+		outbuffer.add_net32int(self.opcode)
+		outbuffer.add_net32int(self.handle)
+		outbuffer.add_net32int(self.tid)
+		outbuffer.add_net32int(self.rid)
+		outbuffer.add_bindict(self.message)
+		outbuffer.add_bindict(self.obj)
+		if not forsigning:
+			outbuffer.add(self.signature)
+
 	def as_string(self, forsigning=False):
 		"""
 		>>> len(OmapiMessage().as_string(True)) >= 24
@@ -339,17 +357,7 @@ class OmapiMessage:
 		@raises OmapiSizeLimitError:
 		"""
 		ret = OutBuffer()
-		if not forsigning:
-			ret.add_net32int(self.authid)
-		ret.add_net32int(len(self.signature))
-		ret.add_net32int(self.opcode)
-		ret.add_net32int(self.handle)
-		ret.add_net32int(self.tid)
-		ret.add_net32int(self.rid)
-		ret.add_bindict(self.message)
-		ret.add_bindict(self.obj)
-		if not forsigning:
-			ret.add(self.signature)
+		self.serialize(ret, forsigning)
 		return ret.getvalue()
 
 	def sign(self, authenticator):
