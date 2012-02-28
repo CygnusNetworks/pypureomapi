@@ -56,6 +56,11 @@ try:
 	from cStringIO import StringIO
 except ImportError:
 	from StringIO import StringIO
+try:
+	next
+except NameError:
+	def next(it):
+		return it.next()
 
 sysrand = random.SystemRandom()
 
@@ -507,7 +512,7 @@ class InBuffer:
 
 	def parse_net32int(self):
 		"""
-		>>> hex(next(InBuffer("\\x01\\0\\0\\x02").parse_net32int()))
+		>>> hex(int(next(InBuffer("\\x01\\0\\0\\x02").parse_net32int())))
 		'0x1000002'
 		"""
 		return parse_map(lambda data: struct.unpack("!L", data)[0],
