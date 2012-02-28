@@ -576,10 +576,16 @@ class InBuffer:
 			yield entries
 
 	def parse_startup_message(self):
-		# results in (version, headersize)
+		"""results in (version, headersize)
+
+		>>> d = "\\0\\0\\0\\x64\\0\\0\\0\\x18"
+		>>> next(InBuffer(d).parse_startup_message())
+		(100, 24)
+		"""
 		return parse_chain(self.parse_net32int, lambda _: self.parse_net32int())
 
 	def parse_message(self):
+		"""results in an OmapiMessage"""
 		parser = parse_chain(self.parse_net32int, # authid
 				lambda *_: self.parse_net32int(), # authlen
 				lambda *_: self.parse_net32int(), # opcode
