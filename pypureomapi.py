@@ -104,6 +104,12 @@ class OutBuffer:
 	def __init__(self):
 		self.buff = StringIO()
 
+	def __len__(self):
+		"""Return the number of bytes in the buffer.
+		@rtype: int
+		"""
+		return self.buff.tell()
+
 	def add(self, data):
 		"""
 		@type data: str
@@ -111,7 +117,7 @@ class OutBuffer:
 		@raises OmapiSizeLimitError:
 		"""
 		self.buff.write(data)
-		if self.buff.tell() > self.sizelimit:
+		if len(self) > self.sizelimit:
 			raise OmapiSizeLimitError()
 		return self
 
