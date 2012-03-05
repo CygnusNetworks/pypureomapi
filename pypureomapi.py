@@ -640,6 +640,7 @@ class InBuffer:
 		return parse_map(lambda args: # skip authlen in args:
 				OmapiMessage(*(args[0:1] + args[2:])), parser)
 
+__all__.append("pack_ip")
 def pack_ip(ipstr):
 	"""Converts an ip address given in dotted notation to a four byte
 	string in network byte order.
@@ -664,6 +665,7 @@ def pack_ip(ipstr):
 	parts = map(chr, parts) # raises ValueError
 	return "".join(parts) # network byte order
 
+__all__.append("unpack_ip")
 def unpack_ip(fourbytes):
 	"""Converts an ip address given in a four byte string in network
 	byte order to a string in dotted notation.
@@ -685,6 +687,7 @@ def unpack_ip(fourbytes):
 		raise ValueError("given buffer is not exactly four bytes long")
 	return ".".join(map(str, map(ord, fourbytes)))
 
+__all__.append("pack_mac")
 def pack_mac(macstr):
 	"""Converts a mac address given in colon delimited notation to a
 	six byte string in network byte order.
@@ -710,6 +713,7 @@ def pack_mac(macstr):
 	parts = map(chr, parts) # raises ValueError
 	return "".join(parts) # network byte order
 
+__all__.append("unpack_mac")
 def unpack_mac(sixbytes):
 	"""Converts a mac address given in a six byte string in network
 	byte order to a string in colon delimited notation.
