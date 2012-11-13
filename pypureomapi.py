@@ -46,21 +46,18 @@ __email__       = "info@cygnusnetworks.de"
 
 __all__ = []
 
+import binascii
 import struct
 import hmac
+import io
 import socket
 import random
 import operator
 import sys
 try:
-	from cStringIO import StringIO
-except ImportError:
-	from StringIO import StringIO
-try:
-	next
+	basestring
 except NameError:
-	def next(it):
-		return it.next()
+	basestring = str
 
 sysrand = random.SystemRandom()
 
@@ -102,17 +99,18 @@ class OutBuffer:
 	"""Helper class for constructing network packets."""
 	sizelimit = 65536
 	def __init__(self):
-		self.buff = StringIO()
+		self.buff = io.BytesIO()
 
 	def __len__(self):
 		"""Return the number of bytes in the buffer.
 		@rtype: int
 		"""
-		return self.buff.tell()
+		# On Py2.7 tell returns long, but __len__ is required to return int.
+		return int(self.buff.tell())
 
 	def add(self, data):
 		"""
-		@type data: str
+		@type data: bytes
 		@returns: self
 		@raises OmapiSizeLimitError:
 		"""
@@ -145,10 +143,11 @@ class OutBuffer:
 
 	def add_net32string(self, string):
 		"""
-		>>> OutBuffer().add_net32string("x").getvalue()
-		'\\x00\\x00\\x00\\x01x'
+		>>> r = b'\\x00\\x00\\x00\\x01x'
+		>>> OutBuffer().add_net32string(b"x").getvalue() == r
+		True
 
-		@type string: str
+		@type string: bytes
 		@param string: maximum length must fit in a 32bit integer
 		@returns: self
 		@raises OmapiSizeLimitError:
@@ -159,10 +158,10 @@ class OutBuffer:
 
 	def add_net16string(self, string):
 		"""
-		>>> OutBuffer().add_net16string("x").getvalue()
-		'\\x00\\x01x'
+		>>> OutBuffer().add_net16string(b"x").getvalue() == b'\\x00\\x01x'
+		True
 
-		@type string: str
+		@type string: bytes
 		@param string: maximum length must fit in a 16bit integer
 		@returns: self
 		@raises OmapiSizeLimitError:
@@ -173,10 +172,11 @@ class OutBuffer:
 
 	def add_bindict(self, items):
 		"""
-		>>> OutBuffer().add_bindict(dict(foo="bar")).getvalue()
-		'\\x00\\x03foo\\x00\\x00\\x00\\x03bar\\x00\\x00'
+		>>> r = b'\\x00\\x03foo\\x00\\x00\\x00\\x03bar\\x00\\x00'
+		>>> OutBuffer().add_bindict({b"foo": b"bar"}).getvalue() == r
+		True
 
-		@type items: [(str, str)] or {str: str}
+		@type items: [(bytes, bytes)] or {bytes: bytes}
 		@returns: self
 		@raises OmapiSizeLimitError:
 		"""
@@ -184,26 +184,26 @@ class OutBuffer:
 			items = items.items()
 		for key, value in items:
 			self.add_net16string(key).add_net32string(value)
-		return self.add("\x00\x00") # end marker
+		return self.add(b"\x00\x00") # end marker
 
 	def getvalue(self):
 		"""
-		>>> OutBuffer().add("sp").add("am").getvalue()
-		'spam'
+		>>> OutBuffer().add(b"sp").add(b"am").getvalue() == b"spam"
+		True
 
-		@rtype: str
+		@rtype: bytes
 		"""
 		return self.buff.getvalue()
 
 	def consume(self, length):
 		"""
-		>>> OutBuffer().add("spam").consume(2).getvalue()
-		'am'
+		>>> OutBuffer().add(b"spam").consume(2).getvalue() == b"am"
+		True
 
 		@type length: int
 		@returns: self
 		"""
-		self.buff = StringIO(self.getvalue()[length:])
+		self.buff = io.BytesIO(self.getvalue()[length:])
 		return self
 
 class OmapiStartupMessage:
@@ -234,7 +234,7 @@ class OmapiStartupMessage:
 
 	def as_string(self):
 		"""
-		@rtype: str
+		@rtype: bytes
 		"""
 		ret = OutBuffer()
 		self.serialize(ret)
@@ -263,14 +263,14 @@ class OmapiAuthenticatorBase:
 		pass
 	def auth_object(self):
 		"""
-		@rtype: {str: str}
+		@rtype: {bytes: bytes}
 		@returns: object part of an omapi authentication message
 		"""
 		raise NotImplementedError
 	def sign(self, message):
 		"""
-		@type message: str
-		@rtype: str
+		@type message: bytes
+		@rtype: bytes
 		@returns: a signature of length self.authlen
 		"""
 		raise NotImplementedError()
@@ -283,33 +283,33 @@ class OmapiNullAuthenticator(OmapiAuthenticatorBase):
 	def auth_object(self):
 		return {}
 	def sign(self, _):
-		return ""
+		return b""
 
 class OmapiHMACMD5Authenticator(OmapiAuthenticatorBase):
 	authlen = 16
-	algorithm = "hmac-md5.SIG-ALG.REG.INT."
+	algorithm = b"hmac-md5.SIG-ALG.REG.INT."
 	def __init__(self, user, key):
 		"""
-		@type user: str
-		@type key: str
+		@type user: bytes
+		@type key: bytes
 		@param key: base64 encoded key
 		@raises binascii.Error: for bad base64 encoding
 		"""
 		OmapiAuthenticatorBase.__init__(self)
 		self.user = user
-		self.key = key.decode("base64")
+		self.key = binascii.a2b_base64(key)
 
 	def auth_object(self):
-		return dict(name=self.user, algorithm=self.algorithm)
+		return {b"name": self.user, b"algorithm": self.algorithm}
 
 	def sign(self, message):
 		"""
 		>>> authlen = OmapiHMACMD5Authenticator.authlen
-		>>> len(OmapiHMACMD5Authenticator("foo", 16*"x").sign("baz")) == authlen
+		>>> len(OmapiHMACMD5Authenticator(b"foo", 16*b"x").sign(b"baz")) == authlen
 		True
 
-		@type message: str
-		@rtype: str
+		@type message: bytes
+		@rtype: bytes
 		@returns: a signature of length self.authlen
 		"""
 		return hmac.HMAC(self.key, message).digest()
@@ -328,16 +328,16 @@ class OmapiMessage:
 	@ivar tid: Transmission identifier.
 	@type rid: int
 	@ivar rid: Receive identifier (of a response is the tid of the request).
-	@type message: [(str, str)]
+	@type message: [(bytes, bytes)]
 	@ivar message: A list of (key, value) pairs.
-	@type obj: [(str, str)]
+	@type obj: [(bytes, bytes)]
 	@ivar obj: A list of (key, value) pairs.
-	@type signature: str
+	@type signature: bytes
 	@ivar signature: A signature on this message as generated by an
 			authenticator.
 	"""
 	def __init__(self, authid=0, opcode=0, handle=0, tid=0, rid=0,
-			message=None, obj=None, signature=""):
+			message=None, obj=None, signature=b""):
 		"""
 		Construct an OmapiMessage from the given fields. No error
 		checking is performed.
@@ -348,8 +348,8 @@ class OmapiMessage:
 		@type tid: int
 		@param tid: The special value -1 causes a tid to be generated randomly.
 		@type rid: int
-		@type message: [(str, str)]
-		@type obj: [(str, str)]
+		@type message: [(bytes, bytes)]
+		@type obj: [(bytes, bytes)]
 		@type signature: str
 		@rtype: OmapiMessage
 		"""
@@ -394,7 +394,7 @@ class OmapiMessage:
 		True
 
 		@type forsigning: bool
-		@rtype: str
+		@rtype: bytes
 		@raises OmapiSizeLimitError:
 		"""
 		ret = OutBuffer()
@@ -406,7 +406,7 @@ class OmapiMessage:
 		@type authenticator: OmapiAuthenticatorBase
 		"""
 		self.authid = authenticator.authid
-		self.signature = "\0" * authenticator.authlen # provide authlen
+		self.signature = b"\0" * authenticator.authlen # provide authlen
 		self.signature = authenticator.sign(self.as_string(forsigning=True))
 		assert len(self.signature) == authenticator.authlen
 
@@ -425,10 +425,10 @@ class OmapiMessage:
 	@classmethod
 	def open(cls, typename):
 		"""Create an OMAPI open message with given typename.
-		@type typename: str
+		@type typename: bytes
 		@rtype: OmapiMessage
 		"""
-		return cls(opcode=OMAPI_OP_OPEN, message=[("type", typename)], tid=-1)
+		return cls(opcode=OMAPI_OP_OPEN, message=[(b"type", typename)], tid=-1)
 
 	@classmethod
 	def update(cls, handle):
@@ -455,7 +455,7 @@ class OmapiMessage:
 
 	def update_object(self, update):
 		"""
-		@type update: {str: str}
+		@type update: {bytes: bytes}
 		"""
 		self.obj = [(key, value) for key, value in self.obj
 					if key not in update]
@@ -517,20 +517,20 @@ def parse_chain(*args):
 
 class InBuffer:
 	sizelimit = 65536
-	def __init__(self, initial=""):
+	def __init__(self, initial=b""):
 		"""
-		@type initial: str
+		@type initial: bytes
 		@param initial: initial value of the buffer
 		@raises OmapiSizeLimitError:
 		"""
-		self.buff = ""
+		self.buff = b""
 		self.totalsize = 0
 		if initial:
 			self.feed(initial)
 
 	def feed(self, data):
 		"""
-		@type data: str
+		@type data: bytes
 		@returns: self
 		@raises OmapiSizeLimitError:
 		"""
@@ -559,7 +559,7 @@ class InBuffer:
 
 	def parse_net16int(self):
 		"""
-		>>> hex(next(InBuffer("\\x01\\x02").parse_net16int()))
+		>>> hex(next(InBuffer(b"\\x01\\x02").parse_net16int()))
 		'0x102'
 		"""
 		return parse_map(lambda data: struct.unpack("!H", data)[0],
@@ -567,7 +567,7 @@ class InBuffer:
 
 	def parse_net32int(self):
 		"""
-		>>> hex(int(next(InBuffer("\\x01\\0\\0\\x02").parse_net32int())))
+		>>> hex(int(next(InBuffer(b"\\x01\\0\\0\\x02").parse_net32int())))
 		'0x1000002'
 		"""
 		return parse_map(lambda data: struct.unpack("!L", data)[0],
@@ -575,25 +575,25 @@ class InBuffer:
 
 	def parse_net16string(self):
 		"""
-		>>> next(InBuffer("\\0\\x03eggs").parse_net16string())
-		'egg'
+		>>> next(InBuffer(b"\\0\\x03eggs").parse_net16string()) == b'egg'
+		True
 		"""
 		return parse_map(operator.itemgetter(1),
 				parse_chain(self.parse_net16int, self.parse_fixedbuffer))
 
 	def parse_net32string(self):
 		"""
-		>>> next(InBuffer("\\0\\0\\0\\x03eggs").parse_net32string())
-		'egg'
+		>>> next(InBuffer(b"\\0\\0\\0\\x03eggs").parse_net32string()) == b'egg'
+		True
 		"""
 		return parse_map(operator.itemgetter(1),
 				parse_chain(self.parse_net32int, self.parse_fixedbuffer))
 
 	def parse_bindict(self):
 		"""
-		>>> d = "\\0\\x01a\\0\\0\\0\\x01b\\0\\0spam"
-		>>> next(InBuffer(d).parse_bindict())
-		[('a', 'b')]
+		>>> d = b"\\0\\x01a\\0\\0\\0\\x01b\\0\\0spam"
+		>>> next(InBuffer(d).parse_bindict()) == [(b'a', b'b')]
+		True
 		"""
 		entries = []
 		try:
@@ -619,7 +619,7 @@ class InBuffer:
 	def parse_startup_message(self):
 		"""results in an OmapiStartupMessage
 
-		>>> d = "\\0\\0\\0\\x64\\0\\0\\0\\x18"
+		>>> d = b"\\0\\0\\0\\x64\\0\\0\\0\\x18"
 		>>> next(InBuffer(d).parse_startup_message()).validate()
 		"""
 		return parse_map(lambda args: OmapiStartupMessage(*args),
@@ -640,6 +640,16 @@ class InBuffer:
 		return parse_map(lambda args: # skip authlen in args:
 				OmapiMessage(*(args[0:1] + args[2:])), parser)
 
+if isinstance(bytes(b"x")[0], int):
+	def bytes_to_int_seq(b):
+		return b
+	int_seq_to_bytes = bytes # raises ValueError
+else:
+	def bytes_to_int_seq(b):
+		return map(ord, b)
+	def int_seq_to_bytes(s):
+		return "".join(map(chr, s)) # raises ValueError
+
 __all__.append("pack_ip")
 def pack_ip(ipstr):
 	"""Converts an ip address given in dotted notation to a four byte
@@ -653,7 +663,7 @@ def pack_ip(ipstr):
 	ValueError: given ip address has an invalid number of dots
 
 	@type ipstr: str
-	@rtype: str
+	@rtype: bytes
 	@raises ValueError: for badly formatted ip addresses
 	"""
 	if not isinstance(ipstr, basestring):
@@ -662,38 +672,37 @@ def pack_ip(ipstr):
 	if len(parts) != 4:
 		raise ValueError("given ip address has an invalid number of dots")
 	parts = map(int, parts) # raises ValueError
-	parts = map(chr, parts) # raises ValueError
-	return "".join(parts) # network byte order
+	return int_seq_to_bytes(parts) # raises ValueError
 
 __all__.append("unpack_ip")
 def unpack_ip(fourbytes):
 	"""Converts an ip address given in a four byte string in network
 	byte order to a string in dotted notation.
 
-	>>> unpack_ip("dead")
+	>>> unpack_ip(b"dead")
 	'100.101.97.100'
-	>>> unpack_ip("alive")
+	>>> unpack_ip(b"alive")
 	Traceback (most recent call last):
 	...
 	ValueError: given buffer is not exactly four bytes long
 
-	@type fourbytes: str
+	@type fourbytes: bytes
 	@rtype: str
 	@raises ValueError: for bad input
 	"""
-	if not isinstance(fourbytes, str):
+	if not isinstance(fourbytes, bytes):
 		raise ValueError("given buffer is not a string")
 	if len(fourbytes) != 4:
 		raise ValueError("given buffer is not exactly four bytes long")
-	return ".".join(map(str, map(ord, fourbytes)))
+	return ".".join(map(str, bytes_to_int_seq(fourbytes)))
 
 __all__.append("pack_mac")
 def pack_mac(macstr):
 	"""Converts a mac address given in colon delimited notation to a
 	six byte string in network byte order.
 
-	>>> pack_mac("30:31:32:33:34:35")
-	'012345'
+	>>> pack_mac("30:31:32:33:34:35") == b'012345'
+	True
 	>>> pack_mac("bad")
 	Traceback (most recent call last):
 	...
@@ -701,7 +710,7 @@ def pack_mac(macstr):
 
 
 	@type macstr: str
-	@rtype: str
+	@rtype: bytes
 	@raises ValueError: for badly formatted mac addresses
 	"""
 	if not isinstance(macstr, basestring):
@@ -710,30 +719,29 @@ def pack_mac(macstr):
 	if len(parts) != 6:
 		raise ValueError("given mac addresses has an invalid number of colons")
 	parts = [int(part, 16) for part in parts] # raises ValueError
-	parts = map(chr, parts) # raises ValueError
-	return "".join(parts) # network byte order
+	return int_seq_to_bytes(parts) # raises ValueError
 
 __all__.append("unpack_mac")
 def unpack_mac(sixbytes):
 	"""Converts a mac address given in a six byte string in network
 	byte order to a string in colon delimited notation.
 
-	>>> unpack_mac("012345")
+	>>> unpack_mac(b"012345")
 	'30:31:32:33:34:35'
-	>>> unpack_mac("bad")
+	>>> unpack_mac(b"bad")
 	Traceback (most recent call last):
 	...
 	ValueError: given buffer is not exactly six bytes long
 
-	@type sixbytes: str
+	@type sixbytes: bytes
 	@rtype: str
 	@raises ValueError: for bad input
 	"""
-	if not isinstance(sixbytes, str):
+	if not isinstance(sixbytes, bytes):
 		raise ValueError("given buffer is not a string")
 	if len(sixbytes) != 6:
 		raise ValueError("given buffer is not exactly six bytes long")
-	return ":".join(map("%2.2x".__mod__, map(ord, sixbytes)))
+	return ":".join(map("%2.2x".__mod__, bytes_to_int_seq(sixbytes)))
 
 __all__.append("Omapi")
 class Omapi:
@@ -741,8 +749,8 @@ class Omapi:
 		"""
 		@type hostname: str
 		@type port: int
-		@type username: str or None
-		@type key: str or None
+		@type username: bytes or None
+		@type key: bytes or None
 		@type debug: bool
 		@param key: if given, it must be base64 encoded
 		@raises binascii.Error: for bad base64 encoding
@@ -919,7 +927,7 @@ class Omapi:
 		@raises OmapiError:
 		@raises socket.error:
 		"""
-		msg = OmapiMessage.open("authenticator")
+		msg = OmapiMessage.open(b"authenticator")
 		msg.update_object(authenticator.auth_object())
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
@@ -939,12 +947,12 @@ class Omapi:
 		@raises OmapiError:
 		@raises socket.error:
 		"""
-		msg = OmapiMessage.open("host")
-		msg.message.append(("create", struct.pack("!I", 1)))
-		msg.message.append(("exclusive", struct.pack("!I", 1)))
-		msg.obj.append(("hardware-address", pack_mac(mac)))
-		msg.obj.append(("hardware-type", struct.pack("!I", 1)))
-		msg.obj.append(("ip-address", pack_ip(ip)))
+		msg = OmapiMessage.open(b"host")
+		msg.message.append((b"create", struct.pack("!I", 1)))
+		msg.message.append((b"exclusive", struct.pack("!I", 1)))
+		msg.obj.append((b"hardware-address", pack_mac(mac)))
+		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
+		msg.obj.append((b"ip-address", pack_ip(ip)))
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError("add failed")
@@ -956,9 +964,9 @@ class Omapi:
 		@raises OmapiError:
 		@raises socket.error:
 		"""
-		msg = OmapiMessage.open("host")
-		msg.obj.append(("hardware-address", pack_mac(mac)))
-		msg.obj.append(("hardware-type", struct.pack("!I", 1)))
+		msg = OmapiMessage.open(b"host")
+		msg.obj.append((b"hardware-address", pack_mac(mac)))
+		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiErrorNotFound()
@@ -976,13 +984,13 @@ class Omapi:
 		@raises OmapiError:
 		@raises socket.error:
 		"""
-		msg = OmapiMessage.open("lease")
-		msg.obj.append(("hardware-address", pack_mac(mac)))
+		msg = OmapiMessage.open(b"lease")
+		msg.obj.append((b"hardware-address", pack_mac(mac)))
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiErrorNotFound()
 		try:
-			return unpack_ip(dict(response.obj)["ip-address"])
+			return unpack_ip(dict(response.obj)[b"ip-address"])
 		except KeyError: # ip-address
 			raise OmapiErrorNotFound()
 
@@ -994,13 +1002,13 @@ class Omapi:
 		@raises OmapiError:
 		@raises socket.error:
 		"""
-		msg = OmapiMessage.open("lease")
-		msg.obj.append(("ip-address", pack_ip(ip)))
+		msg = OmapiMessage.open(b"lease")
+		msg.obj.append((b"ip-address", pack_ip(ip)))
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiErrorNotFound()
 		try:
-			return unpack_mac(dict(response.obj)["hardware-address"])
+			return unpack_mac(dict(response.obj)[b"hardware-address"])
 		except KeyError: # hardware-address
 			raise OmapiErrorNotFound()
 
