@@ -116,9 +116,9 @@ class OutBuffer:
 		@returns: self
 		@raises OmapiSizeLimitError:
 		"""
-		self.buff.write(data)
-		if len(self) > self.sizelimit:
+		if len(self) + len(data) > self.sizelimit:
 			raise OmapiSizeLimitError()
+		self.buff.write(data)
 		return self
 
 	def add_net32int(self, integer):
