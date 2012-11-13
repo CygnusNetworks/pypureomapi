@@ -864,7 +864,7 @@ class Omapi:
 					self.close()
 					raise OmapiError("bad omapi message signature")
 				if self.debug:
-					print "debug recv"
+					sys.stdout.write("debug recv\n")
 					sys.stdout.write(message.dump())
 				return message
 
@@ -898,7 +898,7 @@ class Omapi:
 		if sign:
 			message.sign(self.authenticators[self.defauth])
 		if self.debug:
-			print "debug send"
+			sys.stdout.write("debug send\n")
 			sys.stdout.write(message.dump())
 		self.send_conn(message.as_string())
 
