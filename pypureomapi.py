@@ -3,7 +3,7 @@
 #
 # library for communicating with an isc dhcp server over the omapi protocol
 #
-# Copyright (C) 2010-2011 Cygnus Networks GmbH
+# Copyright (C) 2010-2012 Cygnus Networks GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ For an example see http://code.google.com/p/pypureomapi/wiki/Example.
 __author__      = "Helmut Grohne, Torge Szczepanek"
 __copyright__   = "Cygnus Networks GmbH"
 __licence__     = "GPL-3"
-__version__     = "0.2"
+__version__     = "0.3"
 __maintainer__  = "Torge Szczepanek"
 __email__       = "info@cygnusnetworks.de"
 

@@ -1,3 +1,11 @@
+pypureomapi (0.3-1) unstable; urgency=low
+
+  * Added OmapiMessage.update.
+  * Export {,un}pack_{ip,mac}.
+  * Forward compatibility with python3.
+
+ -- Helmut Grohne <h.grohne@cygnusnetworks.de>  Tue, 20 Nov 2012 16:15:17 +0100
+
 pypureomapi (0.2-1) unstable; urgency=low
 
   * Set debian/source/format to 1.0.
