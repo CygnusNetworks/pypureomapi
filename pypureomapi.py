@@ -95,7 +95,7 @@ class OmapiErrorNotFound(OmapiError):
 	def __init__(self):
 		OmapiError.__init__(self, "not found")
 
-class OutBuffer:
+class OutBuffer(object):
 	"""Helper class for constructing network packets."""
 	sizelimit = 65536
 	def __init__(self):
@@ -206,7 +206,7 @@ class OutBuffer:
 		self.buff = io.BytesIO(self.getvalue()[length:])
 		return self
 
-class OmapiStartupMessage:
+class OmapiStartupMessage(object):
 	"""Class describing the protocol negotiation messages."""
 	implemented_protocol_version = 100
 	implemented_header_size = 4 * 6
@@ -247,7 +247,7 @@ class OmapiStartupMessage:
 		outbuffer.add_net32int(self.protocol_version)
 		outbuffer.add_net32int(self.header_size)
 
-class OmapiAuthenticatorBase:
+class OmapiAuthenticatorBase(object):
 	"""Base class for OMAPI authenticators.
 	@cvar authlen: is the length of a signature as returned by the sign method
 	@type authlen: int
@@ -315,7 +315,7 @@ class OmapiHMACMD5Authenticator(OmapiAuthenticatorBase):
 		return hmac.HMAC(self.key, message).digest()
 
 __all__.append("OmapiMessage")
-class OmapiMessage:
+class OmapiMessage(object):
 	"""
 	@type authid: int
 	@ivar authid: The id of the message authenticator.
@@ -515,7 +515,7 @@ def parse_chain(*args):
 				break
 	yield tuple(items)
 
-class InBuffer:
+class InBuffer(object):
 	sizelimit = 65536
 	def __init__(self, initial=b""):
 		"""
@@ -744,7 +744,7 @@ def unpack_mac(sixbytes):
 	return ":".join(map("%2.2x".__mod__, bytes_to_int_seq(sixbytes)))
 
 __all__.append("Omapi")
-class Omapi:
+class Omapi(object):
 	def __init__(self, hostname, port, username=None, key=None, debug=False):
 		"""
 		@type hostname: str
