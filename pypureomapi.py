@@ -50,15 +50,16 @@ import binascii
 import struct
 import hmac
 import io
+import logging
 import socket
 import random
 import operator
-import sys
 try:
 	basestring
 except NameError:
 	basestring = str
 
+logger = logging.getLogger("pypureomapi")
 sysrand = random.SystemRandom()
 
 __all__.extend("OMAPI_OP_OPEN OMAPI_OP_REFRESH OMAPI_OP_UPDATE".split())
@@ -477,6 +478,17 @@ class OmapiMessage(object):
 				"obj:\t\t%r\n" % self.obj,
 				"signature:\t%r\n" % self.signature))
 
+	def dump_oneline(self):
+		"""
+		@rtype: str
+		@returns: a barely human readable representation in one line
+		"""
+		return ("authid=%d authlen=%d opcode=%s handle=%d tid=%d rid=%d " +
+				"message=%r obj=%r signature=%r") % (self.authid,
+						len(self.signature), repr_opcode(self.opcode),
+						self.handle, self.tid, self.rid, self.message,
+						self.obj, self.signature)
+
 def parse_map(filterfun, parser):
 	"""Creates a new parser that passes the result of the given parser through
 	the given filterfun.
@@ -743,15 +755,20 @@ def unpack_mac(sixbytes):
 		raise ValueError("given buffer is not exactly six bytes long")
 	return ":".join(map("%2.2x".__mod__, bytes_to_int_seq(sixbytes)))
 
+class lazy_str(object):
+	def __init__(self, function):
+		self.function = function
+	def __str__(self):
+		return self.function()
+
 __all__.append("Omapi")
 class Omapi(object):
-	def __init__(self, hostname, port, username=None, key=None, debug=False):
+	def __init__(self, hostname, port, username=None, key=None):
 		"""
 		@type hostname: str
 		@type port: int
 		@type username: bytes or None
 		@type key: bytes or None
-		@type debug: bool
 		@param key: if given, it must be base64 encoded
 		@raises binascii.Error: for bad base64 encoding
 		@raises socket.error:
@@ -761,7 +778,6 @@ class Omapi(object):
 		self.port = port
 		self.authenticators = {0: OmapiNullAuthenticator()}
 		self.defauth = 0
-		self.debug = debug
 
 		newauth = None
 		if username is not None and key is not None:
@@ -869,12 +885,10 @@ class Omapi(object):
 				self.fill_inbuffer()
 			else:
 				self.inbuffer.resetsize()
+				logger.debug("received %s", lazy_str(message.dump_oneline))
 				if not message.verify(self.authenticators):
 					self.close()
 					raise OmapiError("bad omapi message signature")
-				if self.debug:
-					sys.stdout.write("debug recv\n")
-					sys.stdout.write(message.dump())
 				return message
 
 	def receive_response(self, message, insecure=False):
@@ -906,9 +920,7 @@ class Omapi(object):
 		self.check_connected()
 		if sign:
 			message.sign(self.authenticators[self.defauth])
-		if self.debug:
-			sys.stdout.write("debug send\n")
-			sys.stdout.write(message.dump())
+		logger.debug("sending %s", lazy_str(message.dump_oneline))
 		self.send_conn(message.as_string())
 
 	def query_server(self, message):
