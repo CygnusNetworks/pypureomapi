@@ -208,7 +208,17 @@ class OutBuffer(object):
 		return self
 
 class OmapiStartupMessage(object):
-	"""Class describing the protocol negotiation messages."""
+	"""Class describing the protocol negotiation messages.
+
+	>>> s = OmapiStartupMessage().as_string()
+	>>> s == b"\\0\\0\\0\\x64\\0\\0\\0\\x18"
+	True
+	>>> next(InBuffer(s).parse_startup_message()).validate()
+	>>> OmapiStartupMessage(42).validate()
+	Traceback (most recent call last):
+	...
+	OmapiError: protocol mismatch
+	"""
 	implemented_protocol_version = 100
 	implemented_header_size = 4 * 6
 
