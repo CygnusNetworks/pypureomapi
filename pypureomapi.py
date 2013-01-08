@@ -794,6 +794,7 @@ class Omapi(object):
 		"""Receive up to length bytes of data from the connection.
 
 		@type length: int
+		@rtype: bytes
 		@raises OmapiError: if not connected
 		@raises socket.error:
 		"""
@@ -807,7 +808,7 @@ class Omapi(object):
 	def send_conn(self, data):
 		"""Send all of data to the connection.
 
-		@type data: str
+		@type data: bytes
 		@raises OmapiError: if not connected
 		@raises socket.error:
 		"""
