@@ -258,6 +258,14 @@ class OmapiStartupMessage(object):
 		outbuffer.add_net32int(self.protocol_version)
 		outbuffer.add_net32int(self.header_size)
 
+	def dump_oneline(self):
+		"""
+		@rtype: str
+		@returns: a human readable representation in one line
+		"""
+		return "protocol_version=%d header_size=%d" % (self.protocol_version,
+				self.header_size)
+
 class OmapiAuthenticatorBase(object):
 	"""Base class for OMAPI authenticators.
 	@cvar authlen: is the length of a signature as returned by the sign method
@@ -866,7 +874,10 @@ class Omapi(object):
 		@raises socket.error:
 		"""
 		self.check_connected()
-		self.send_conn(OmapiStartupMessage().as_string())
+		message = OmapiStartupMessage()
+		logger.debug("sending omapi startup message %s",
+				lazy_str(message.dump_oneline))
+		self.send_conn(message.as_string())
 
 	def recv_protocol_initialization(self):
 		"""
@@ -878,6 +889,8 @@ class Omapi(object):
 				self.fill_inbuffer()
 			else:
 				self.inbuffer.resetsize()
+				logger.debug("received omapi startup message %s",
+						lazy_str(result.dump_oneline))
 				try:
 					result.validate()
 				except OmapiError:
@@ -961,6 +974,7 @@ class Omapi(object):
 		self.authenticators[authid] = authenticator
 		authenticator.authid = authid
 		self.defauth = authid
+		logger.debug("successfully initialized default authid %d", authid)
 
 	def add_host(self, ip, mac):
 		"""
