@@ -1,3 +1,12 @@
+pypureomapi (0.4~WIP) UNRELEASED; urgency=low
+
+  * Use new-style classes.
+  * Bump python dependency to 2.6 since we need it.
+  * Use logging module for debugging.
+  * Switch to native versioning to not confuse tools.
+
+ -- Helmut Grohne <h.grohne@cygnusnetworks.de>  Wed, 20 Mar 2013 10:31:37 +0100
+
 pypureomapi (0.3-1) unstable; urgency=low
 
   * Added OmapiMessage.update.
