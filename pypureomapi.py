@@ -111,6 +111,12 @@ class OutBuffer(object):
 
 	def add(self, data):
 		"""
+		>>> ob = OutBuffer().add(OutBuffer.sizelimit * "x")
+		>>> ob.add("y") # doctest: +ELLIPSIS
+		Traceback (most recent call last):
+		...
+		OmapiSizeLimitError: ...
+
 		@type data: bytes
 		@returns: self
 		@raises OmapiSizeLimitError:
@@ -431,6 +437,20 @@ class OmapiMessage(object):
 
 	def verify(self, authenticators):
 		"""Verify this OMAPI message.
+
+		>>> a1 = OmapiHMACMD5Authenticator("egg", "spam")
+		>>> a2 = OmapiHMACMD5Authenticator("egg", "tomatoes")
+		>>> a1.authid = a2.authid = 5
+		>>> m = OmapiMessage.open("host")
+		>>> m.verify({a1.authid: a1})
+		False
+		>>> m.sign(a1)
+		>>> m.verify({a1.authid: a1})
+		True
+		>>> m.sign(a2)
+		>>> m.verify({a1.authid: a1})
+		False
+
 		@type authenticators: {int: OmapiAuthenticatorBase}
 		@rtype: bool
 		"""
