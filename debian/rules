@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 %:
-	dh $@
+	dh $@ --with python2
 ifeq (,$(filter nocheck,${DEB_BUILD_OPTIONS}))
 override_dh_auto_test:
 	python pypureomapi.py
