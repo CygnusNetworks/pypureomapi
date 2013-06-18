@@ -997,7 +997,8 @@ class Omapi(object):
 		logger.debug("successfully initialized default authid %d", authid)
 
 	def add_host(self, ip, mac):
-		"""
+		"""Create a host object with given ip address and and mac address.
+
 		@type ip: str
 		@type mac: str
 		@raises ValueError:
@@ -1015,7 +1016,8 @@ class Omapi(object):
 			raise OmapiError("add failed")
 
 	def del_host(self, mac):
-		"""
+		"""Delete a host object with with given mac address.
+
 		@type mac: str
 		@raises ValueError:
 		@raises OmapiError:
@@ -1034,11 +1036,15 @@ class Omapi(object):
 			raise OmapiError("delete failed")
 
 	def lookup_ip(self, mac):
-		"""
+		"""Look for a lease object with given mac address and return the
+		assigned ip address.
+
 		@type mac: str
 		@rtype: str or None
 		@raises ValueError:
 		@raises OmapiError:
+		@raises OmapiErrorNotFound: if no lease object with the given mac
+				address could be found or the object lacks an ip address
 		@raises socket.error:
 		"""
 		msg = OmapiMessage.open(b"lease")
@@ -1052,11 +1058,15 @@ class Omapi(object):
 			raise OmapiErrorNotFound()
 
 	def lookup_mac(self, ip):
-		"""
+		"""Look up a lease object with given ip address and return the
+		associated mac address.
+
 		@type ip: str
 		@rtype: str or None
 		@raises ValueError:
 		@raises OmapiError:
+		@raises OmapiErrorNotFound: if no lease object with the given ip
+				address could be found or the object lacks a mac address
 		@raises socket.error:
 		"""
 		msg = OmapiMessage.open(b"lease")
