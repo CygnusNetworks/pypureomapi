@@ -473,7 +473,7 @@ class OmapiMessage(object):
 	def update(cls, handle):
 		"""Create an OMAPI update message for the given handle.
 		@type handle: int
-		@rytpe: OmapiMessage
+		@rtype: OmapiMessage
 		"""
 		return cls(opcode=OMAPI_OP_UPDATE, handle=handle, tid=-1)
 
