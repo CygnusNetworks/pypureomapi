@@ -3,7 +3,7 @@
 #
 # library for communicating with an isc dhcp server over the omapi protocol
 #
-# Copyright (C) 2010-2012 Cygnus Networks GmbH
+# Copyright (C) 2010-2013 Cygnus Networks GmbH
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
