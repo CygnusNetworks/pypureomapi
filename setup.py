@@ -32,7 +32,7 @@ distutils.core.setup(name='pypureomapi',
 	url='http://code.google.com/p/pypureomapi/',
 	py_modules=['pypureomapi'],
 	classifiers=[
-		"Development Status :: 5 - Production",
+		"Development Status :: 5 - Production/Stable",
 		"Intended Audience :: System Administrators",
 		"License :: OSI Approved :: GNU General Public License (GPL)",
 		"Programming Language :: Python",
