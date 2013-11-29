@@ -799,6 +799,119 @@ class lazy_str(object):
 	def __str__(self):
 		return self.function()
 
+class TCPClientTransport(object):
+	"""PEP 3156 dummy transport class to support OmapiProtocol class."""
+	def __init__(self, protocol, host, port):
+		self.protocol = protocol
+		self.connection = socket.socket()
+		self.connection.connect((host, port))
+		self.protocol.connection_made(self)
+
+	def close(self):
+		"""Close the omapi connection if it is open."""
+		if self.connection:
+			self.connection.close()
+			self.connection = None
+
+	def fill_inbuffer(self):
+		"""Read bytes from the connection and hand them to the protocol.
+		@raises OmapiError:
+		@raises socket.error:
+		"""
+		if not self.connection:
+			raise OmapiError("not connected")
+		try:
+			data = self.connection.recv(2048)
+		except socket.error:
+			self.close()
+			raise
+		if not data:
+			self.close()
+			raise OmapiError("connection closed")
+		try:
+			self.protocol.data_received(data)
+		except OmapiSizeLimitError:
+			self.close()
+			raise
+
+	def write(self, data):
+		"""Send all of data to the connection.
+
+		@type data: bytes
+		@raises socket.error:
+		"""
+		try:
+			self.connection.sendall(data)
+		except socket.error:
+			self.close()
+			raise
+
+class OmapiProtocol(object):
+	"""PEP 3156 like protocol class for Omapi.
+
+	This interface is not yet to be relied upon.
+	"""
+	def __init__(self):
+		self.transport = None
+		self.authenticators = {0: OmapiNullAuthenticator()}
+		self.defauth = 0
+		self.inbuffer = InBuffer()
+		self.current_parser = self.inbuffer.parse_startup_message()
+
+	def connection_made(self, transport):
+		self.transport = transport
+		message = OmapiStartupMessage()
+		logger.debug("sending omapi startup message %s", lazy_str(message.dump_oneline))
+		self.transport.write(message.as_string())
+
+	def data_received(self, data):
+		"""
+		@type data: bytes
+		"""
+		self.inbuffer.feed(data)
+		while True:
+			if self.current_parser is None:
+				self.current_parser = self.inbuffer.parse_message()
+			result = next(self.current_parser)
+			if result is None:
+				return
+			self.current_parser = None
+			self.inbuffer.resetsize()
+			if isinstance(result, OmapiStartupMessage):
+				logger.debug("received omapi startup message %s", lazy_str(result.dump_oneline))
+				self.startup_received(result)
+			else:
+				assert isinstance(result, OmapiMessage)
+				logger.debug("received %s", lazy_str(result.dump_oneline))
+				self.message_received(result)
+
+	def startup_received(self, startup_message):
+		try:
+			startup_message.validate()
+		except OmapiError:
+			self.transport.close()
+			raise
+		self.startup_completed()
+
+	def startup_completed(self):
+		logger.debug("omapi connection initialized")
+
+	def message_received(self, message):
+		pass
+
+	def send_message(self, message, sign=True):
+		"""Send the given message to the connection.
+
+		@type message: OmapiMessage
+		@param sign: whether the message needs to be signed
+		@raises OmapiError:
+		@raises socket.error:
+		"""
+		if sign:
+			message.sign(self.authenticators[self.defauth])
+		logger.debug("sending %s", lazy_str(message.dump_oneline))
+		self.transport.write(message.as_string())
+
 __all__.append("Omapi")
 class Omapi(object):
 	def __init__(self, hostname, port, username=None, key=None):
@@ -814,18 +927,17 @@ class Omapi(object):
 		"""
 		self.hostname = hostname
 		self.port = port
-		self.authenticators = {0: OmapiNullAuthenticator()}
-		self.defauth = 0
+		self.protocol = OmapiProtocol()
+		self.recv_message_queue = []
+		self.protocol.startup_completed = lambda: self.recv_message_queue.append(None)
+		self.protocol.message_received = self.recv_message_queue.append
 
 		newauth = None
 		if username is not None and key is not None:
 			newauth = OmapiHMACMD5Authenticator(username, key)
 
-		self.connection = socket.socket()
-		self.inbuffer = InBuffer()
-		self.connection.connect((hostname, port))
+		self.transport = TCPClientTransport(self.protocol, hostname, port)
 
-		self.send_protocol_initialization()
 		self.recv_protocol_initialization()
 
 		if newauth:
@@ -833,89 +945,24 @@ class Omapi(object):
 
 	def close(self):
 		"""Close the omapi connection if it is open."""
-		if self.connection:
-			self.connection.close()
-			self.connection = None
+		self.transport.close()
 
 	def check_connected(self):
 		"""Raise an OmapiError unless connected.
 		@raises OmapiError:
 		"""
-		if not self.connection:
+		if not self.transport.connection:
 			raise OmapiError("not connected")
-
-	def recv_conn(self, length):
-		"""Receive up to length bytes of data from the connection.
-
-		@type length: int
-		@rtype: bytes
-		@raises OmapiError: if not connected
-		@raises socket.error:
-		"""
-		self.check_connected()
-		try:
-			return self.connection.recv(length)
-		except socket.error:
-			self.close()
-			raise
-
-	def send_conn(self, data):
-		"""Send all of data to the connection.
-
-		@type data: bytes
-		@raises OmapiError: if not connected
-		@raises socket.error:
-		"""
-		self.check_connected()
-		try:
-			self.connection.sendall(data)
-		except socket.error:
-			self.close()
-			raise
-
-	def fill_inbuffer(self):
-		"""
-		@raises OmapiError:
-		@raises socket.error:
-		"""
-		data = self.recv_conn(2048)
-		if not data:
-			self.close()
-			raise OmapiError("connection closed")
-		try:
-			self.inbuffer.feed(data)
-		except OmapiSizeLimitError:
-			self.close()
-			raise
-
-	def send_protocol_initialization(self):
-		"""
-		@raises OmapiError:
-		@raises socket.error:
-		"""
-		self.check_connected()
-		message = OmapiStartupMessage()
-		logger.debug("sending omapi startup message %s",
-				lazy_str(message.dump_oneline))
-		self.send_conn(message.as_string())
 
 	def recv_protocol_initialization(self):
 		"""
 		@raises OmapiError:
 		@raises socket.error:
 		"""
-		for result in self.inbuffer.parse_startup_message():
-			if result is None:
-				self.fill_inbuffer()
-			else:
-				self.inbuffer.resetsize()
-				logger.debug("received omapi startup message %s",
-						lazy_str(result.dump_oneline))
-				try:
-					result.validate()
-				except OmapiError:
-					self.close()
-					raise
+		while not self.recv_message_queue:
+			self.transport.fill_inbuffer()
+		message = self.recv_message_queue.pop(0)
+		assert message is None
 
 	def receive_message(self):
 		"""Read the next message from the connection.
@@ -923,16 +970,14 @@ class Omapi(object):
 		@raises OmapiError:
 		@raises socket.error:
 		"""
-		for message in self.inbuffer.parse_message():
-			if message is None:
-				self.fill_inbuffer()
-			else:
-				self.inbuffer.resetsize()
-				logger.debug("received %s", lazy_str(message.dump_oneline))
-				if not message.verify(self.authenticators):
-					self.close()
-					raise OmapiError("bad omapi message signature")
-				return message
+		while not self.recv_message_queue:
+			self.transport.fill_inbuffer()
+		message = self.recv_message_queue.pop(0)
+		assert message is not None
+		if not message.verify(self.protocol.authenticators):
+			self.close()
+			raise OmapiError("bad omapi message signature")
+		return message
 
 	def receive_response(self, message, insecure=False):
 		"""Read the response for the given message.
@@ -947,7 +992,7 @@ class Omapi(object):
 		if not response.is_response(message):
 			raise OmapiError("received message is not the desired response")
 		# signature already verified
-		if response.authid != self.defauth and not insecure:
+		if response.authid != self.protocol.defauth and not insecure:
 			raise OmapiError("received message is signed with wrong " +
 						"authenticator")
 		return response
@@ -961,10 +1006,7 @@ class Omapi(object):
 		@raises socket.error:
 		"""
 		self.check_connected()
-		if sign:
-			message.sign(self.authenticators[self.defauth])
-		logger.debug("sending %s", lazy_str(message.dump_oneline))
-		self.send_conn(message.as_string())
+		self.protocol.send_message(message, sign)
 
 	def query_server(self, message):
 		"""Send the message and receive a response for it.
@@ -991,9 +1033,9 @@ class Omapi(object):
 		authid = response.handle
 		if authid == 0:
 			raise OmapiError("received invalid authid from server")
-		self.authenticators[authid] = authenticator
+		self.protocol.authenticators[authid] = authenticator
 		authenticator.authid = authid
-		self.defauth = authid
+		self.protocol.defauth = authid
 		logger.debug("successfully initialized default authid %d", authid)
 
 	def add_host(self, ip, mac):
