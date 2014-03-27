@@ -49,7 +49,7 @@ To generate a key use the following command:
 
 which will create two files containing a HMAC MD5 key. 
 
-#UseCaseCreateGroup
+#Create Group
 
 A group needs at least one statement. See issue #9 for background. See UseCaseSupersedeHostname for example statements.
 ```
@@ -83,7 +83,7 @@ def add_host_with_group(omapi, ip, mac, groupname):
         raise OmapiError("add failed")
 ```
 
-#UseCaseSupersedeHostname
+#Supersede Hostname
 
 See http://jpmens.net/2011/07/20/dynamically-add-static-leases-to-dhcpd/ for the original idea.
 
@@ -114,7 +114,7 @@ def add_host_supersede_name(omapi, ip, mac, name):
 
 Similarly the router can be superseded. 
 
-#UseCaseGetLease
+#Get al ease
 
 Original idea from Josh West.
 
@@ -135,7 +135,7 @@ def get_lease(omapi, ip):
     return response
 ```
 
-#UseCaseChangeGroup
+#Change Group
 
 ```
 def change_group(omapi, name, group):
@@ -156,8 +156,7 @@ def change_group(omapi, name, group):
         raise OmapiError("changing group of host %s to %s failed" % (name, group))
 ```
 
-#CustomIntegration
-#summary Advanced use case
+#Custom Integration
 
 Assuming there already is a connection named `o` (i.e. a `Omapi` instance, see [Example]).
 To craft your own communication with the server you need to create an `OmapiMessage`, send it, receive a response and evaluate that response being an `OmapiMessage` as well. So here we go and create our first message.
