@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf8 -*-
 #
 # library for communicating with an isc dhcp server over the omapi protocol
@@ -934,7 +934,7 @@ class Omapi(object):
 
 		newauth = None
 		if username is not None and key is not None:
-			newauth = OmapiHMACMD5Authenticator(username, key)
+			newauth = OmapiHMACMD5Authenticator(str.encode(username), key)
 
 		self.transport = TCPClientTransport(self.protocol, hostname, port)
 
@@ -1120,6 +1120,28 @@ class Omapi(object):
 			return unpack_mac(dict(response.obj)[b"hardware-address"])
 		except KeyError: # hardware-address
 			raise OmapiErrorNotFound()
+
+	def add_host_supersede_name(omapi, ip, mac, name):
+		"""Add a host with a fixed-address and override its hostname with the given name.
+		@type omapi: Omapi
+		@type ip: str
+		@type mac: str
+		@type name: str
+		@raises ValueError:
+		@raises OmapiError:
+		@raises socket.error:
+		"""
+		msg = OmapiMessage.open(b"host")
+		msg.message.append((b"create", struct.pack("!I", 1)))
+		msg.message.append((b"exclusive", struct.pack("!I", 1)))
+		msg.obj.append((b"hardware-address", pack_mac(mac)))
+		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
+		msg.obj.append((b"ip-address", pack_ip(ip)))
+		msg.obj.append((b"name", name))
+		msg.obj.append((b"statement", str.encode("supersede host-name %s;" % name)))
+		response = omapi.query_server(msg)
+		if response.opcode != OMAPI_OP_UPDATE:
+			raise OmapiError("add failed")
 
 if __name__ == '__main__':
 	import doctest
