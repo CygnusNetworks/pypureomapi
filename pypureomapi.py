@@ -934,7 +934,7 @@ class Omapi(object):
 
 		newauth = None
 		if username is not None and key is not None:
-			newauth = OmapiHMACMD5Authenticator(username, key)
+			newauth = OmapiHMACMD5Authenticator(str.encode(username), key)
 
 		self.transport = TCPClientTransport(self.protocol, hostname, port)
 
