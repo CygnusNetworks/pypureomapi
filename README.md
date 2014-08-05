@@ -114,7 +114,7 @@ def add_host_supersede_name(omapi, ip, mac, name):
 
 Similarly the router can be superseded. 
 
-#Get al ease
+#Get a lease
 
 Original idea from Josh West.
 
