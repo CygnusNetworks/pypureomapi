@@ -47,7 +47,12 @@ To generate a key use the following command:
 /usr/sbin/dnssec-keygen -a HMAC-MD5 -b 128 -n USER defomapi
 ```
 
-which will create two files containing a HMAC MD5 key. 
+which will create two files containing a HMAC MD5 key. Alternatively, it
+is possible to generate the key value for the config file directly:
+
+```
+dd if=/dev/urandom bs=16 count=1 2>/dev/null | openssl enc -e -base64
+```
 
 #Create Group
 
