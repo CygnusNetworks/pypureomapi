@@ -29,7 +29,7 @@ distutils.core.setup(name='pypureomapi',
 	maintainer='Torge Szczepanek',
 	maintainer_email='info@cygnusnetworks.de',
 	license='GPL',
-	url='http://code.google.com/p/pypureomapi/',
+	url='https://github.com/CygnusNetworks/pypureomapi',
 	py_modules=['pypureomapi'],
 	classifiers=[
 		"Development Status :: 5 - Production/Stable",

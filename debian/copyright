@@ -1,7 +1,7 @@
 Format-Specification: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?op=file&rev=135
 Name: pypureomapi
 Maintainer: Torge Szczepanek <info@cygnusnetworks.de>
-Source: http://code.google.com/p/pypureomapi/
+Source: https://github.com/CygnusNetworks/pypureomapi
 
 Files: *
 Copyright: 2010-2013, Cygnus Networks GmbH <info@cygnusnetworks.de>
