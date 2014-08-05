@@ -51,7 +51,7 @@ which will create two files containing a HMAC MD5 key.
 
 #Create Group
 
-A group needs at least one statement. See issue #9 for background. See UseCaseSupersedeHostname for example statements.
+A group needs at least one statement. See UseCaseSupersedeHostname for example statements.
 ```
 def add_group(omapi, groupname, statements):
     """
