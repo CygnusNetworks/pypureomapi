@@ -47,11 +47,16 @@ To generate a key use the following command:
 /usr/sbin/dnssec-keygen -a HMAC-MD5 -b 128 -n USER defomapi
 ```
 
-which will create two files containing a HMAC MD5 key. 
+which will create two files containing a HMAC MD5 key. Alternatively, it
+is possible to generate the key value for the config file directly:
+
+```
+dd if=/dev/urandom bs=16 count=1 2>/dev/null | openssl enc -e -base64
+```
 
 #Create Group
 
-A group needs at least one statement. See issue #9 for background. See UseCaseSupersedeHostname for example statements.
+A group needs at least one statement. See UseCaseSupersedeHostname for example statements.
 ```
 def add_group(omapi, groupname, statements):
     """
@@ -114,7 +119,7 @@ def add_host_supersede_name(omapi, ip, mac, name):
 
 Similarly the router can be superseded. 
 
-#Get al ease
+#Get a lease
 
 Original idea from Josh West.
 

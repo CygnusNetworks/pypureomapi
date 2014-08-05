@@ -21,23 +21,24 @@
 import distutils.core
 
 distutils.core.setup(name='pypureomapi',
-	version='0.3',
+	version='0.4.0a1',
 	description="ISC DHCP OMAPI protocol implementation in Python",
 	long_description="This module grew out of frustration about pyomapi and later pyomapic. The extension modules mentioned can be used to query the ISC DHCP server for information about leases. pyomapic does this job using swig and the static library provided with ISC DHCP. It leaks and has basically no error checking. Adding error checking later turned out to be a maintenance hell with swig, so a pure python implementation for omapi, pypureomapi was born. It can mostly be used as a drop-in replacement for pyomapic.",
 	author='Helmut Grohne',
 	author_email='h.grohne@cygnusnetworks.de',
 	maintainer='Torge Szczepanek',
 	maintainer_email='info@cygnusnetworks.de',
-	license='GPL',
-	url='http://code.google.com/p/pypureomapi/',
+	license='GPLv3',
+	url='https://github.com/CygnusNetworks/pypureomapi',
 	py_modules=['pypureomapi'],
 	classifiers=[
-		"Development Status :: 5 - Production/Stable",
+		"Development Status :: 3 - Alpha",
 		"Intended Audience :: System Administrators",
-		"License :: OSI Approved :: GNU General Public License (GPL)",
+		"License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
 		"Programming Language :: Python",
 		"Topic :: Internet",
 		"Topic :: System :: Networking",
+		"Topic :: Software Development :: Libraries :: Python Modules",
 		]
 	)
 
