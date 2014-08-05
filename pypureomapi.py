@@ -37,7 +37,7 @@
 __author__      = "Helmut Grohne, Torge Szczepanek"
 __copyright__   = "Cygnus Networks GmbH"
 __licence__     = "GPL-3"
-__version__     = "0.3"
+__version__     = "0.4.0a1"
 __maintainer__  = "Torge Szczepanek"
 __email__       = "info@cygnusnetworks.de"
 
