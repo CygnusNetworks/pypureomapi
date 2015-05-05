@@ -1,5 +1,5 @@
-#!/usr/bin/python
-#
+#!/usr/bin/env python
+# -*- coding: utf8 -*-
 # library for communicating with an isc dhcp server over the omapi protocol
 #
 # Copyright (C) 2010-2013 Cygnus Networks GmbH
