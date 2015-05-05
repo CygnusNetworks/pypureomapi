@@ -20,7 +20,7 @@
 #
 
 # Message format:
-# 
+
 # authid (netint32)
 # authlen (netint32)
 # opcode (netint32)
@@ -30,7 +30,7 @@
 # message (dictionary)
 # object (dictionary)
 # signature (length is authlen)
-# 
+
 # dictionary = entry* 0x00 0x00
 # entry = key (net16str) value (net32str)
 
@@ -698,9 +698,9 @@ if isinstance(bytes(b"x")[0], int):
 	int_seq_to_bytes = bytes  # raises ValueError
 else:
 	def bytes_to_int_seq(b):
-		return map(ord, b)
+		return [ord(x) for x in b]
 	def int_seq_to_bytes(s):
-		return "".join(map(chr, s))  # raises ValueError
+		return "".join([chr(x) for x in s])  # raises ValueError
 
 __all__.append("pack_ip")
 
@@ -725,7 +725,7 @@ def pack_ip(ipstr):
 	parts = ipstr.split('.')
 	if len(parts) != 4:
 		raise ValueError("given ip address has an invalid number of dots")
-	parts = map(int, parts)  # raises ValueError
+	parts = [int(x) for x in parts]  # raises ValueError
 	return int_seq_to_bytes(parts)  # raises ValueError
 
 __all__.append("unpack_ip")
@@ -750,7 +750,7 @@ def unpack_ip(fourbytes):
 		raise ValueError("given buffer is not a string")
 	if len(fourbytes) != 4:
 		raise ValueError("given buffer is not exactly four bytes long")
-	return ".".join(map(str, bytes_to_int_seq(fourbytes)))
+	return ".".join([str(x) for x in bytes_to_int_seq(fourbytes)])
 
 __all__.append("pack_mac")
 
@@ -801,7 +801,7 @@ def unpack_mac(sixbytes):
 		raise ValueError("given buffer is not a string")
 	if len(sixbytes) != 6:
 		raise ValueError("given buffer is not exactly six bytes long")
-	return ":".join(map("%2.2x".__mod__, bytes_to_int_seq(sixbytes)))
+	return ":".join(["%2.2x".__mod__(x) for x in bytes_to_int_seq(sixbytes)])
 
 
 class LazyStr(object):
