@@ -631,8 +631,7 @@ class InBuffer(object):
 		>>> next(InBuffer(b"\\0\\x03eggs").parse_net16string()) == b'egg'
 		True
 		"""
-		return parse_map(operator.itemgetter(1),
-				parse_chain(self.parse_net16int, self.parse_fixedbuffer))
+		return parse_map(operator.itemgetter(1), parse_chain(self.parse_net16int, self.parse_fixedbuffer))
 
 	def parse_net32string(self):
 		"""
@@ -674,9 +673,7 @@ class InBuffer(object):
 		>>> d = b"\\0\\0\\0\\x64\\0\\0\\0\\x18"
 		>>> next(InBuffer(d).parse_startup_message()).validate()
 		"""
-		return parse_map(lambda args: OmapiStartupMessage(*args),
-				parse_chain(self.parse_net32int,
-					lambda _: self.parse_net32int()))
+		return parse_map(lambda args: OmapiStartupMessage(*args), parse_chain(self.parse_net32int, lambda _: self.parse_net32int()))
 
 	def parse_message(self):
 		"""results in an OmapiMessage"""
@@ -699,6 +696,7 @@ if isinstance(bytes(b"x")[0], int):
 else:
 	def bytes_to_int_seq(b):
 		return [ord(x) for x in b]
+
 	def int_seq_to_bytes(s):
 		return "".join([chr(x) for x in s])  # raises ValueError
 
