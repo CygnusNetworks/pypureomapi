@@ -1126,7 +1126,7 @@ class Omapi(object):
         if response.opcode != OMAPI_OP_STATUS:
             raise OmapiError("delete failed")
 
-    def lookup_ip(self, mac):
+    def lookup_lease_by_mac(self, mac):
         """Look for a lease object with given mac address and return the
         assigned ip address.
 
@@ -1148,7 +1148,7 @@ class Omapi(object):
         except KeyError:  # ip-address
             raise OmapiErrorNotFound()
 
-    def lookup_mac(self, ip):
+    def lookup_lease_by_ip(self, ip):
         """Look up a lease object with given ip address and return the
         associated mac address.
 
@@ -1168,6 +1168,52 @@ class Omapi(object):
         try:
             return unpack_mac(dict(response.obj)[b"hardware-address"])
         except KeyError:  # hardware-address
+            raise OmapiErrorNotFound()
+
+    def lookup_host_by_name(self, name):
+        """Look for a lease object with given mac address and return the
+        assigned ip address.
+
+        @type mac: str
+        @rtype: str or None
+        @raises ValueError:
+        @raises OmapiError:
+        @raises OmapiErrorNotFound: if no lease object with the given mac
+                                    address could be found or the object
+                                    lacks an ip address
+        @raises socket.error:
+        """
+        msg = OmapiMessage.open(b"host")
+        msg.obj.append((b"name", name))
+        response = self.query_server(msg)
+        if response.opcode != OMAPI_OP_UPDATE:
+            raise OmapiErrorNotFound()
+        try:
+            return unpack_ip(dict(response.obj)[b"ip-address"])
+        except KeyError:  # ip-address
+            raise OmapiErrorNotFound()
+
+    def lookup_host_by_mac(self, mac):
+        """Look for a lease object with given mac address and return the
+        assigned ip address.
+
+        @type mac: str
+        @rtype: str or None
+        @raises ValueError:
+        @raises OmapiError:
+        @raises OmapiErrorNotFound: if no lease object with the given mac
+                                    address could be found or the object
+                                    lacks an ip address
+        @raises socket.error:
+        """
+        msg = OmapiMessage.open(b"host")
+        msg.obj.append((b"hardware-address", pack_mac(mac)))
+        response = self.query_server(msg)
+        if response.opcode != OMAPI_OP_UPDATE:
+            raise OmapiErrorNotFound()
+        try:
+            return unpack_ip(dict(response.obj)[b"ip-address"])
+        except KeyError:  # ip-address
             raise OmapiErrorNotFound()
 
     def add_host_supersede_name(omapi, ip, mac, name):
@@ -1192,6 +1238,31 @@ class Omapi(object):
         response = omapi.query_server(msg)
         if response.opcode != OMAPI_OP_UPDATE:
             raise OmapiError("add failed")
+
+    def add_host_hostname_router(self, hostname, name, ip, mac, router):
+        """Create a host object with given ip address and and mac address.
+
+        @type ip: str
+        @type mac: str
+        @raises ValueError:
+        @raises OmapiError:
+        @raises socket.error:
+        """
+        msg = OmapiMessage.open(b"host")
+        msg.message.append((b"create", struct.pack("!I", 1)))
+        msg.obj.append((b"name", name))
+        msg.obj.append((b"hardware-address", pack_mac(mac)))
+        msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
+        msg.obj.append((b"ip-address", pack_ip(ip)))
+        msg.obj.append((b"statements",
+                        str.encode('supersede '
+                                   'host-name "%s";\n supersede '
+                                   'routers %s;'
+                                   % (hostname, str(router)))))
+        response = self.query_server(msg)
+        if response.opcode != OMAPI_OP_UPDATE:
+            raise OmapiError("add failed")
+
 
 if __name__ == '__main__':
     import doctest
