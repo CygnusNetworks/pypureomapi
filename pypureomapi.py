@@ -33,11 +33,11 @@
 # dictionary = entry* 0x00 0x00
 # entry = key (net16str) value (net32str)
 
-__author__ = "Helmut Grohne, Torge Szczepanek"
+__author__ = "Helmut Grohne, Dr. Torge Szczepanek"
 __copyright__ = "Cygnus Networks GmbH"
-__licence__ = "GPL-3"
+__license__ = "Apache-2.0"
 __version__ = "0.4"
-__maintainer__ = "Torge Szczepanek"
+__maintainer__ = "Dr. Torge Szczepanek"
 __email__ = "debian@cygnusnetworks.de"
 
 
