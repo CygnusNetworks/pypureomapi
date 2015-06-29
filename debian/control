@@ -1,17 +1,17 @@
 Source: pypureomapi
-Maintainer: Torge Szczepanek <debian@cygnusnetworks.de>
+Maintainer: Dr. Torge Szczepanek <debian@cygnusnetworks.de>
 Uploaders: Helmut Grohne <h.grohne@cygnusnetworks.de>
-Standards-Version: 3.9.7
+Standards-Version: 3.9.6
 Section: python
 Priority: extra
 Homepage: https://github.com/CygnusNetworks/pypureomapi
-Build-Depends: debhelper (>= 9), python (>= 2.6), dh-python
-XS-Python-Version: >= 2.6
+Build-Depends: debhelper (>= 9), python (>= 2.6), dh-python, python3
+X-Python-Version: >= 2.6
+X-Python3-Version: >= 3.3
 
 Package: python-pypureomapi
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}
-XB-Python-Version: ${python:Versions}
 Description: ISC DHCP OMAPI protocol implementation in Python
  This module grew out of frustration about pyomapi and later pyomapic. The
  extension modules mentioned can be used to query the ISC DHCP server for
@@ -20,3 +20,15 @@ Description: ISC DHCP OMAPI protocol implementation in Python
  Adding error checking later turned out to be a maintenance hell with swig, so
  a pure Python implementation for omapi, pypureomapi was born. It can mostly
  be used as a drop-in replacement for pyomapic. 
+
+Package: python3-pypureomapi
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}
+Description: ISC DHCP OMAPI protocol implementation in Python
+ This module grew out of frustration about pyomapi and later pyomapic. The
+ extension modules mentioned can be used to query the ISC DHCP server for
+ information about leases. pyomapic does this job using swig and the static
+ library provided with ISC DHCP. It leaks and has basically no error checking.
+ Adding error checking later turned out to be a maintenance hell with swig, so
+ a pure Python implementation for omapi, pypureomapi was born. It can mostly
+ be used as a drop-in replacement for pyomapic.
