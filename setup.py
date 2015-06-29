@@ -39,4 +39,3 @@ distutils.core.setup(name='pypureomapi',
 		"Topic :: Software Development :: Libraries :: Python Modules",
 		]
 	)
-
