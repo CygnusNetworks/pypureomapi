@@ -1,21 +1,6 @@
 #!/usr/bin/make -f
 
-PYTHONS:=$(shell pyversions -vr)
-PYTHON3S:=$(shell py3versions -vr)
+export PYBUILD_NAME=pypureomapi
 
 %:
-	dh $@ --with python2,python3
-ifeq (,$(filter nocheck,${DEB_BUILD_OPTIONS}))
-override_dh_auto_test:
-	python pypureomapi.py
-endif
-
-override_dh_auto_install:
-	set -e && for pyvers in $(PYTHONS); do \
-		python$$pyvers setup.py install --install-layout=deb \
-		--root $(CURDIR)/debian/python-pypureomapi; \
-	done
-	set -e && for pyvers in $(PYTHON3S); do \
-		python$$pyvers setup.py install --install-layout=deb \
-		--root $(CURDIR)/debian/python3-pypureomapi; \
-	done
+	dh $@ --with python2,python3 --buildsystem=pybuild
