@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/CygnusNetworks/pypureomapi.svg?branch=master)](https://travis-ci.org/CygnusNetworks/pypureomapi)
+
 pypureomapi
 ===========
 
