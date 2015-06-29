@@ -9,4 +9,5 @@ install:
  - if test "$TRAVIS_PYTHON_VERSION" = 2.7; then pip install --use-mirrors unittest2; fi
 script:
  - python -m unittest discover
+ - python pypureomapi.py -v
 
