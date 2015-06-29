@@ -1,6 +1,6 @@
-Format-Specification: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Name: pypureomapi
-Maintainer: Dr. Torge Szczepanek <debian@cygnusnetworks.de>
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: pypureomapi
+Upstream-Contact: Dr. Torge Szczepanek <debian@cygnusnetworks.de>
 Source: https://github.com/CygnusNetworks/pypureomapi
 
 Files: *
