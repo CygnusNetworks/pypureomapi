@@ -1,13 +1,17 @@
-pypureomapi (0.4-1) UNRELEASED; urgency=low
+pypureomapi (0.4) UNRELEASED; urgency=low
 
+  [ Dr. Torge Szczepanek ]
+  * Switch License to Apache 2.0
+  * PEP-8 cleanups
   * Use new-style classes.
+  [ Helmut Grohne ]
   * Bump python dependency to 2.6 since we need it.
   * Use logging module for debugging.
   * Switch to native versioning to not confuse tools.
   * Switch from pysupport to dh_python2.
   * Update packaging
 
- -- Helmut Grohne <h.grohne@cygnusnetworks.de>  Mon, 4 Aug 2014 21:40:05 -0400
+ -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Mon, 29 Jun 2015 12:24:09 +0200
 
 pypureomapi (0.3-1) unstable; urgency=low
 
