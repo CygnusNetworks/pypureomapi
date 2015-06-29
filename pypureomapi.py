@@ -54,7 +54,7 @@ import operator
 try:
 	basestring
 except NameError:
-	basestring = str
+	basestring = str  # pylint:disable=W0622
 
 logger = logging.getLogger("pypureomapi")
 sysrand = random.SystemRandom()
@@ -1134,7 +1134,7 @@ class Omapi(object):
 		except KeyError:  # hardware-address
 			raise OmapiErrorNotFound()
 
-	def add_host_supersede_name(omapi, ip, mac, name):
+	def add_host_supersede_name(omapi, ip, mac, name):  # pylint:disable=E0213
 		"""Add a host with a fixed-address and override its hostname with the given name.
 		@type omapi: Omapi
 		@type ip: str
