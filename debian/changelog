@@ -15,14 +15,23 @@ pypureomapi (0.4) unstable; urgency=low
 
 pypureomapi (0.3-1) unstable; urgency=low
 
+  * New upstream release.
+    + Update debian/copyright years.
+    + Minimum Python version bumped to 2.6.
+  * Bump Standards-Version from 3.9.2 to 3.9.4: No changes needed.
+  * Move required Python version to X-Python-Version to comply with python
+    policy 2.3.
+  * Update debian/copyright from dep5 draft to final version.
   * Added OmapiMessage.update.
   * Export {,un}pack_{ip,mac}.
   * Forward compatibility with python3.
 
- -- Helmut Grohne <h.grohne@cygnusnetworks.de>  Tue, 20 Nov 2012 16:15:17 +0100
+ -- Helmut Grohne <helmut@subdivi.de>  Wed, 26 Jun 2013 22:03:20 +0200
 
 pypureomapi (0.2-1) unstable; urgency=low
 
+  * Initial release. (Closes: #602921: RFP: pypureomapi -- ISC DHCP
+    OMAPI protocol implementation in Python)
   * Set debian/source/format to 1.0.
   * Added missing (empty) ${misc:Depends} for debhelper.
   * Invoke test suite in override_dh_auto_test.
@@ -33,4 +42,4 @@ pypureomapi (0.1-1) unstable; urgency=low
 
   * Initial release.
 
- -- Helmut Grohne <h.grohne@cygnusnetworks.de>  Tue, 24 Aug 2010 14:15:30 +0200
+ -- Helmut Grohne <helmut@subdivi.de>  Thu, 08 Dec 2011 08:57:55 +0100
