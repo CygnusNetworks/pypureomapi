@@ -4,6 +4,7 @@ pypureomapi (0.4-1) unstable; urgency=low
   * Switch License to Apache 2.0
   * PEP-8 cleanups
   * Use new-style classes.
+  * Change maintainer to Torge Szczepanek and remove Helmut Grohne from uploaders
   [ Helmut Grohne ]
   * Bump python dependency to 2.6 since we need it.
   * Use logging module for debugging.

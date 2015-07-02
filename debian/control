@@ -1,6 +1,5 @@
 Source: pypureomapi
 Maintainer: Dr. Torge Szczepanek <debian@cygnusnetworks.de>
-Uploaders: Helmut Grohne <h.grohne@cygnusnetworks.de>
 Standards-Version: 3.9.6
 Section: python
 Priority: extra
