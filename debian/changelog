@@ -11,7 +11,7 @@ pypureomapi (0.4) unstable; urgency=low
   * Switch from pysupport to dh_python2.
   * Update packaging
 
- -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Mon, 29 Jun 2015 12:24:09 +0200
+ -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Thu, 02 Jul 2015 11:25:26 +0200
 
 pypureomapi (0.3-1) unstable; urgency=low
 
