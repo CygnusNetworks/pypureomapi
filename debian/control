@@ -12,19 +12,7 @@ X-Python3-Version: >= 3.3
 Package: python-pypureomapi
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}
-Description: ISC DHCP OMAPI protocol implementation in Python
- This module grew out of frustration about pyomapi and later pyomapic. The
- extension modules mentioned can be used to query the ISC DHCP server for
- information about leases. pyomapic does this job using swig and the static
- library provided with ISC DHCP. It leaks and has basically no error checking.
- Adding error checking later turned out to be a maintenance hell with swig, so
- a pure Python implementation for omapi, pypureomapi was born. It can mostly
- be used as a drop-in replacement for pyomapic. 
-
-Package: python3-pypureomapi
-Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}
-Description: ISC DHCP OMAPI protocol implementation in Python
+Description: ISC DHCP OMAPI protocol implementation in Python2
  This module grew out of frustration about pyomapi and later pyomapic. The
  extension modules mentioned can be used to query the ISC DHCP server for
  information about leases. pyomapic does this job using swig and the static
@@ -32,3 +20,17 @@ Description: ISC DHCP OMAPI protocol implementation in Python
  Adding error checking later turned out to be a maintenance hell with swig, so
  a pure Python implementation for omapi, pypureomapi was born. It can mostly
  be used as a drop-in replacement for pyomapic.
+ This is the py2 version of the module.
+
+Package: python3-pypureomapi
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}
+Description: ISC DHCP OMAPI protocol implementation in Python3
+ This module grew out of frustration about pyomapi and later pyomapic. The
+ extension modules mentioned can be used to query the ISC DHCP server for
+ information about leases. pyomapic does this job using swig and the static
+ library provided with ISC DHCP. It leaks and has basically no error checking.
+ Adding error checking later turned out to be a maintenance hell with swig, so
+ a pure Python implementation for omapi, pypureomapi was born. It can mostly
+ be used as a drop-in replacement for pyomapic.
+ This is the py3 version of the module.
