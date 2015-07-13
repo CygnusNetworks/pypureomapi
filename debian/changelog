@@ -3,8 +3,11 @@ pypureomapi (0.4-1) unstable; urgency=low
   [ Dr. Torge Szczepanek ]
   * Switch License to Apache 2.0
   * PEP-8 cleanups
-  * Use new-style classes.
-  * Change maintainer to Torge Szczepanek and remove Helmut Grohne from uploaders
+  * Use new-style classes
+  * Disabled doctests - to be included again later in next upstream release
+  * Change project source from Google Code to Github after upstream migration
+  * Change maintainer to Torge Szczepanek and remove 
+    Helmut Grohne from uploaders
   [ Helmut Grohne ]
   * Bump python dependency to 2.6 since we need it.
   * Use logging module for debugging.
