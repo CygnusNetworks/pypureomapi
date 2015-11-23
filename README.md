@@ -144,6 +144,29 @@ def get_lease(omapi, ip):
     return response
 ```
 
+#Get an IP from a host MAC address
+
+```
+def lookup_ip_host(self, mac):
+    """Lookup a host object with with given mac address.
+
+    @type mac: str
+    @raises ValueError:
+    @raises OmapiError:
+    @raises socket.error:
+    """
+    msg = OmapiMessage.open(b"host")
+    msg.obj.append((b"hardware-address", pack_mac(mac)))
+    msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
+    response = self.query_server(msg)
+    if response.opcode != OMAPI_OP_UPDATE:
+        raise OmapiErrorNotFound()
+    try:
+        return unpack_ip(dict(response.obj)[b"ip-address"])
+    except KeyError:  # ip-address
+        raise OmapiErrorNotFound()
+```
+
 #Change Group
 
 ```
