@@ -1090,7 +1090,7 @@ class Omapi(object):
 		if response.opcode != OMAPI_OP_STATUS:
 			raise OmapiError("delete failed")
 
-        def lookup_ip_host(self, mac):
+	def lookup_ip_host(self, mac):
                 """Lookup a host object with with given mac address.
 
                 @type mac: str
