@@ -1175,6 +1175,35 @@ class Omapi(object):
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError("add failed")
 
+	def add_host_options(self, ip, mac, options=[], name=""):
+		"""Add a host with a fixed-address and set options.
+
+		@type ip: str
+		@type mac: str
+		@type options: list of str
+		@type name: str, add .local if it's not a domain name
+		@raises ValueError:
+		@raises OmapiError:
+		@raises socket.error:
+		"""
+
+		if name and not name.count("."):
+			name += ".local"
+
+		msg = OmapiMessage.open(b"host")
+		msg.message.append((b"create", struct.pack("!I", 1)))
+		msg.message.append((b"exclusive", struct.pack("!I", 1)))
+		msg.obj.append((b"hardware-address", pack_mac(mac)))
+		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
+		msg.obj.append((b"ip-address", pack_ip(ip)))
+		if name:
+			msg.obj.append((b"name", str.encode(name)))
+		if options:
+			msg.obj.append((b"statements", str.encode(" ".join(options))))
+		response = self.query_server(msg)
+		if response.opcode != OMAPI_OP_UPDATE:
+			raise OmapiError("add failed: %s" % response.message[1][1])
+
 if __name__ == '__main__':
 	import doctest
 	doctest.testmod()
