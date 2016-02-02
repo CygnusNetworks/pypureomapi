@@ -1060,15 +1060,7 @@ class Omapi(object):
 		@raises OmapiError:
 		@raises socket.error:
 		"""
-		msg = OmapiMessage.open(b"host")
-		msg.message.append((b"create", struct.pack("!I", 1)))
-		msg.message.append((b"exclusive", struct.pack("!I", 1)))
-		msg.obj.append((b"hardware-address", pack_mac(mac)))
-		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
-		msg.obj.append((b"ip-address", pack_ip(ip)))
-		response = self.query_server(msg)
-		if response.opcode != OMAPI_OP_UPDATE:
-			raise OmapiError("add failed")
+		self.add_host_options(ip, mac)
 
 	def del_host(self, mac):
 		"""Delete a host object with with given mac address.
@@ -1163,17 +1155,7 @@ class Omapi(object):
 		@raises OmapiError:
 		@raises socket.error:
 		"""
-		msg = OmapiMessage.open(b"host")
-		msg.message.append((b"create", struct.pack("!I", 1)))
-		msg.message.append((b"exclusive", struct.pack("!I", 1)))
-		msg.obj.append((b"hardware-address", pack_mac(mac)))
-		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
-		msg.obj.append((b"ip-address", pack_ip(ip)))
-		msg.obj.append((b"name", name))
-		msg.obj.append((b"statements", str.encode('supersede host-name "%s";' % name)))
-		response = omapi.query_server(msg)
-		if response.opcode != OMAPI_OP_UPDATE:
-			raise OmapiError("add failed")
+		omapi.add_host_options(ip, mac, ['supersede host-name "%s";' % name], name)
 
 	def add_host_options(self, ip, mac, options=[], name=""):
 		"""Add a host with a fixed-address and set options.
