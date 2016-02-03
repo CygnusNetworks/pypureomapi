@@ -92,6 +92,43 @@ def add_host_with_group(omapi, ip, mac, groupname):
         raise OmapiError("add failed")
 ```
 
+#Add host with options
+
+```
+def add_host_options(self, ip, mac, options=None, name=None):
+    """Add a host with a fixed-address and set options.
+
+    @type ip: str
+    @type mac: str
+    @type options: list of str
+    @type name: str, add .local if it's not a domain name
+    @raises ValueError:
+    @raises OmapiError:
+    @raises socket.error:
+    """
+
+    assert options is list
+    assert name is str
+
+    if name and not name.count("."):
+        name += ".local"
+
+    msg = OmapiMessage.open(b"host")
+    msg.message.append((b"create", struct.pack("!I", 1)))
+    msg.message.append((b"exclusive", struct.pack("!I", 1)))
+    msg.obj.append((b"hardware-address", pack_mac(mac)))
+    msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
+    msg.obj.append((b"ip-address", pack_ip(ip)))
+    if name:
+        msg.obj.append((b"name", name))
+    if options:
+        msg.obj.append((b"statements", str.encode(" ".join(options))))
+    response = self.query_server(msg)
+    if response.opcode != OMAPI_OP_UPDATE:
+        raise OmapiError("add failed: %s" % response.message[1][1])
+
+```
+
 #Supersede Hostname
 
 See http://jpmens.net/2011/07/20/dynamically-add-static-leases-to-dhcpd/ for the original idea.
@@ -107,21 +144,10 @@ def add_host_supersede_name(omapi, ip, mac, name):
     @raises OmapiError:
     @raises socket.error:
     """
-    msg = OmapiMessage.open("host")
-    msg.message.append(("create", struct.pack("!I", 1)))
-    msg.message.append(("exclusive", struct.pack("!I", 1)))
-    msg.obj.append(("hardware-address", pack_mac(mac)))
-    msg.obj.append(("hardware-type", struct.pack("!I", 1)))
-    msg.obj.append(("ip-address", pack_ip(ip)))
-    msg.obj.append(("name", name))
-    msg.obj.append(("statement", "supersede host-name %s;" % name))
-    response = omapi.query_server(msg)
-    if response.opcode != OMAPI_OP_UPDATE:
-        raise OmapiError("add failed")
-
+    omapi.add_host_options(ip, mac, ['supersede host-name "%s";' % name], name)
 ```
 
-Similarly the router can be superseded. 
+Similarly the router can be superseded.
 
 #Get a lease
 
