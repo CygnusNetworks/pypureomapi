@@ -1157,7 +1157,7 @@ class Omapi(object):
 		"""
 		omapi.add_host_options(ip, mac, ['supersede host-name "%s";' % name], name)
 
-	def add_host_options(self, ip, mac, options=[], name=""):
+	def add_host_options(self, ip, mac, options=None, name=None):
 		"""Add a host with a fixed-address and set options.
 
 		@type ip: str
@@ -1168,6 +1168,9 @@ class Omapi(object):
 		@raises OmapiError:
 		@raises socket.error:
 		"""
+
+		assert options is list
+		assert name is str
 
 		if name and not name.count("."):
 			name += ".local"
