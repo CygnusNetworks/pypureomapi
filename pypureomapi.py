@@ -1179,7 +1179,7 @@ class Omapi(object):
 		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
 		msg.obj.append((b"ip-address", pack_ip(ip)))
 		if name:
-			msg.obj.append((b"name", str.encode(name)))
+			msg.obj.append((b"name", name))
 		if options:
 			msg.obj.append((b"statements", str.encode(" ".join(options))))
 		response = self.query_server(msg)
