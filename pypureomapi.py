@@ -1175,6 +1175,45 @@ class Omapi(object):
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError("add failed")
 
+	def add_host_without_ip(self, mac):
+		"""Create a host object with given mac address without assigning a static ip address.
+
+		@type ip: str
+		@type mac: str
+		@raises ValueError:
+		@raises OmapiError:
+		@raises socket.error:
+		"""
+		msg = OmapiMessage.open(b"host")
+		msg.message.append((b"create", struct.pack("!I", 1)))
+		msg.message.append((b"exclusive", struct.pack("!I", 1)))
+		msg.obj.append((b"hardware-address", pack_mac(mac)))
+		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
+		response = self.query_server(msg)
+		if response.opcode != OMAPI_OP_UPDATE:
+			raise OmapiError("add failed")
+
+	def lookup_hostname(self, ip):
+		"""Look up a lease object with given ip address and return the associated client hostname.
+
+		@type ip: str
+		@rtype: str or None
+		@raises ValueError:
+		@raises OmapiError:
+		@raises OmapiErrorNotFound: if no lease object with the given ip
+				address could be found or the object lacks a hostname
+		@raises socket.error:
+		"""
+		msg = OmapiMessage.open(b"lease")
+		msg.obj.append((b"ip-address", pack_ip(ip)))
+		response = self.query_server(msg)
+		if response.opcode != OMAPI_OP_UPDATE:
+			raise OmapiErrorNotFound()
+		try:
+			return (dict(response.obj)[b"client-hostname"])
+		except KeyError:  # client hostname
+			raise OmapiErrorNotFound()
+
 if __name__ == '__main__':
 	import doctest
 	doctest.testmod()
