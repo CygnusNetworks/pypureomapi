@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
-#
+# pylint:disable=too-many-lines
+
 # library for communicating with an isc dhcp server over the omapi protocol
 #
 # Copyright 2010-2015 Cygnus Networks GmbH
