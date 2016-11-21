@@ -1,3 +1,10 @@
+pypureomapi (0.5) unstable; urgency=low
+
+  * add lookup_hostname and add_host_without_ip
+  * add pylint exceptions and Debian dh-python dependency
+
+ -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Mon, 21 Nov 2016 15:53:04 +0100
+
 pypureomapi (0.4) unstable; urgency=low
 
   [ Dr. Torge Szczepanek ]
