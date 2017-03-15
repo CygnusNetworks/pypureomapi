@@ -1170,8 +1170,8 @@ class Omapi(object):
 		msg.obj.append((b"hardware-address", pack_mac(mac)))
 		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
 		msg.obj.append((b"ip-address", pack_ip(ip)))
-		msg.obj.append((b"name", name))
-		msg.obj.append((b"statements", str.encode('supersede host-name "%s";' % name)))
+		msg.obj.append((b"name", name.encode('utf-8')))
+		msg.obj.append((b"statements", 'supersede host-name "{0}";'.format(name).encode('utf-8')))
 		response = omapi.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError("add failed")
