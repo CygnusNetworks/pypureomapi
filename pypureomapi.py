@@ -47,15 +47,12 @@ __all__ = []
 import binascii
 import struct
 import hmac
-import io
 import logging
 import socket
 import random
 import operator
-try:
-	basestring
-except NameError:
-	basestring = str  # pylint:disable=W0622
+
+import six
 
 logger = logging.getLogger("pypureomapi")
 sysrand = random.SystemRandom()
@@ -106,7 +103,7 @@ class OutBuffer(object):
 	sizelimit = 65536
 
 	def __init__(self):
-		self.buff = io.BytesIO()
+		self.buff = six.BytesIO()
 
 	def __len__(self):
 		"""Return the number of bytes in the buffer.
@@ -216,7 +213,7 @@ class OutBuffer(object):
 		@type length: int
 		@returns: self
 		"""
-		self.buff = io.BytesIO(self.getvalue()[length:])
+		self.buff = six.BytesIO(self.getvalue()[length:])
 		return self
 
 
@@ -718,7 +715,7 @@ def pack_ip(ipstr):
 	@rtype: bytes
 	@raises ValueError: for badly formatted ip addresses
 	"""
-	if not isinstance(ipstr, basestring):
+	if not isinstance(ipstr, six.string_types):
 		raise ValueError("given ip address is not a string")
 	parts = ipstr.split('.')
 	if len(parts) != 4:
@@ -744,8 +741,8 @@ def unpack_ip(fourbytes):
 	@rtype: str
 	@raises ValueError: for bad input
 	"""
-	if not isinstance(fourbytes, bytes):
-		raise ValueError("given buffer is not a string")
+	if not isinstance(fourbytes, six.binary_type):
+		raise ValueError("given buffer is not a binary string")
 	if len(fourbytes) != 4:
 		raise ValueError("given buffer is not exactly four bytes long")
 	return ".".join([str(x) for x in bytes_to_int_seq(fourbytes)])
@@ -769,7 +766,7 @@ def pack_mac(macstr):
 	@rtype: bytes
 	@raises ValueError: for badly formatted mac addresses
 	"""
-	if not isinstance(macstr, basestring):
+	if not isinstance(macstr, six.string_types):
 		raise ValueError("given mac addresses is not a string")
 	parts = macstr.split(":")
 	if len(parts) != 6:
@@ -795,8 +792,8 @@ def unpack_mac(sixbytes):
 	@rtype: str
 	@raises ValueError: for bad input
 	"""
-	if not isinstance(sixbytes, bytes):
-		raise ValueError("given buffer is not a string")
+	if not isinstance(sixbytes, six.binary_type):
+		raise ValueError("given buffer is not a binary string")
 	if len(sixbytes) != 6:
 		raise ValueError("given buffer is not exactly six bytes long")
 	return ":".join(["%2.2x".__mod__(x) for x in bytes_to_int_seq(sixbytes)])

@@ -29,6 +29,7 @@ distutils.core.setup(name='pypureomapi',
 	license='Apache-2.0',
 	url='https://github.com/CygnusNetworks/pypureomapi',
 	py_modules=['pypureomapi'],
+	install_requires=['six'],
 	classifiers=[
 		"Development Status :: 5 - Production/Stable",
 		"Intended Audience :: System Administrators",
