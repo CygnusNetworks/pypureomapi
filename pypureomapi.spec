@@ -9,7 +9,7 @@
 
 %define srcname pypureomapi
 %define version 0.4
-%define release 1
+%define release 2
 %define sum Cygnus Networks GmbH %{srcname} package
 
 Name:           python-%{srcname}
