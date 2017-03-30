@@ -1,9 +1,14 @@
+pypureomapi (0.6) unstable; urgency=low
+
+  * add optional timeout parameter
+  * add Python 3.6 compatibility
+
+ -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Thu, 30 Mar 2017 13:53:19 +0200
+
 pypureomapi (0.5) unstable; urgency=low
 
   * add lookup_hostname and add_host_without_ip
   * add pylint exceptions and Debian dh-python dependency
-  * add optional timeout parameter
-  * add Python 3.6 compatibility
 
  -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Mon, 21 Nov 2016 15:53:04 +0100
 
