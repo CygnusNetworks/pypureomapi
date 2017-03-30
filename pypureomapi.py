@@ -813,9 +813,10 @@ class LazyStr(object):  # pylint:disable=too-few-public-methods
 
 class TCPClientTransport(object):
 	"""PEP 3156 dummy transport class to support OmapiProtocol class."""
-	def __init__(self, protocol, host, port):
+	def __init__(self, protocol, host, port, timeout=None):
 		self.protocol = protocol
 		self.connection = socket.socket()
+		self.connection.settimeout(timeout)
 		self.connection.connect((host, port))
 		self.protocol.connection_made(self)
 
@@ -930,7 +931,7 @@ __all__.append("Omapi")
 
 
 class Omapi(object):
-	def __init__(self, hostname, port, username=None, key=None):
+	def __init__(self, hostname, port, username=None, key=None, timeout=None):  # pylint:disable=too-many-arguments
 		"""
 		@type hostname: str
 		@type port: int
@@ -952,7 +953,7 @@ class Omapi(object):
 		if username is not None and key is not None:
 			newauth = OmapiHMACMD5Authenticator(username, key)
 
-		self.transport = TCPClientTransport(self.protocol, hostname, port)
+		self.transport = TCPClientTransport(self.protocol, hostname, port, timeout=timeout)
 
 		self.recv_protocol_initialization()
 
