@@ -8,7 +8,7 @@
 %endif
 
 %define srcname pypureomapi
-%define version 0.5
+%define version 0.6
 %define release 1
 %define sum Cygnus Networks GmbH %{srcname} package
 

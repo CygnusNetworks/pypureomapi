@@ -4,7 +4,7 @@
 
 # library for communicating with an isc dhcp server over the omapi protocol
 #
-# Copyright 2010-2015 Cygnus Networks GmbH
+# Copyright 2010-2017 Cygnus Networks GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@
 __author__ = "Helmut Grohne, Dr. Torge Szczepanek"
 __copyright__ = "Cygnus Networks GmbH"
 __license__ = "Apache-2.0"
-__version__ = "0.5"
+__version__ = "0.6"
 __maintainer__ = "Dr. Torge Szczepanek"
 __email__ = "debian@cygnusnetworks.de"
 
