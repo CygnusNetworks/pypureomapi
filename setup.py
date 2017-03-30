@@ -44,5 +44,5 @@ distutils.core.setup(name='pypureomapi',
 		"Topic :: Internet",
 		"Topic :: System :: Networking",
 		"Topic :: Software Development :: Libraries :: Python Modules",
-		]
-	)
+	]
+)
