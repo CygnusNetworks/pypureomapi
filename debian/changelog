@@ -1,4 +1,4 @@
-pypureomapi (0.6) unstable; urgency=low
+pypureomapi (0.6) UNRELEASED; urgency=low
 
   * add optional timeout parameter
   * add Python 3.6 compatibility
