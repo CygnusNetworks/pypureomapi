@@ -26,7 +26,7 @@ try:
 except pypureomapi.OmapiErrorNotFound:
     print "%s is currently not assigned" % (lease_ip,)
 except pypureomapi.OmapiError, err:
-    print "an error occured: %r" % (err,)
+    print "an error occurred: %r" % (err,)
 ```
 
 #Server side configugration for ISC DHCP3
