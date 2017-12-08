@@ -1175,8 +1175,8 @@ class Omapi(object):
 		try:
 			ip = unpack_ip(dict(response.obj)[b"ip-address"])
 			mac = unpack_mac(dict(response.obj)[b"hardware-address"])
-			name = dict(response.obj)['name']
-			return {'ip': ip, 'mac': mac, 'name': name}
+			hostname = dict(response.obj)[b"name"]
+			return {'ip': ip, 'mac': mac, 'hostname': hostname.decode('utf-8')}
 		except KeyError:
 			raise OmapiErrorNotFound()
 
