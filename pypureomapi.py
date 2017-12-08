@@ -1168,7 +1168,7 @@ class Omapi(object):
 		@raises socket.error:
 		"""
 		msg = OmapiMessage.open(b"host")
-		msg.obj.append((b"name", name))
+		msg.obj.append((b"name", name.encode('utf-8'))
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiErrorNotFound()
