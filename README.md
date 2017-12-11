@@ -7,7 +7,7 @@ pypureomapi
 
 pypureomapi is a Python implementation of the DHCP OMAPI protocol used in the most popular Linux DHCP server from ISC. It can be used to query and modify leases and other objects exported by an ISC DHCP server. The interaction can be authenticated using HMAC-MD5. Besides basic ready to use operations, custom interaction can be implemented with limited effort. It can be used as a drop-in replacement for pyomapic, but provides error checking and extensibility beyond pyomapic.
 
-#Example omapi lookup
+# Example omapi lookup
 
 ```
 import pypureomapi
@@ -29,7 +29,7 @@ except pypureomapi.OmapiError, err:
     print "an error occurred: %r" % (err,)
 ```
 
-#Server side configugration for ISC DHCP3
+# Server side configugration for ISC DHCP3
 
 To allow a OMAPI access to your ISC DHCP3 DHCP Server you should define the following in your dhcpd.conf config file:
 
@@ -58,7 +58,7 @@ is possible to generate the key value for the config file directly:
 dd if=/dev/urandom bs=16 count=1 2>/dev/null | openssl enc -e -base64
 ```
 
-#Create Group
+# Create Group
 
 A group needs at least one statement. See UseCaseSupersedeHostname for example statements.
 ```
@@ -92,7 +92,7 @@ def add_host_with_group(omapi, ip, mac, groupname):
         raise OmapiError("add failed")
 ```
 
-#Supersede Hostname
+# Supersede Hostname
 
 See http://jpmens.net/2011/07/20/dynamically-add-static-leases-to-dhcpd/ for the original idea.
 
@@ -123,7 +123,7 @@ def add_host_supersede_name(omapi, ip, mac, name):
 
 Similarly the router can be superseded. 
 
-#add host declaration without static ip
+# add host declaration without static ip
 ```
 def add_host_without_ip(self, mac):
     """Create a host object with given mac address without assigning a static ip address.
@@ -144,7 +144,7 @@ def add_host_without_ip(self, mac):
             raise OmapiError("add failed")
 ```
 
-#lookup hostname based on ip address
+# lookup hostname based on ip address
 ```
 def lookup_hostname(self, ip):
     """Look up a lease object with given ip address and return the associated client hostname.
@@ -168,7 +168,7 @@ def lookup_hostname(self, ip):
             raise OmapiErrorNotFound()
 ```
 
-#Get a lease
+# Get a lease
 
 Original idea from Josh West.
 
@@ -189,7 +189,7 @@ def get_lease(omapi, ip):
     return response
 ```
 
-#Get an IP from a host MAC address
+# Get an IP from a host MAC address
 
 ```
 def lookup_ip_host(self, mac):
@@ -212,7 +212,7 @@ def lookup_ip_host(self, mac):
         raise OmapiErrorNotFound()
 ```
 
-#Change Group
+# Change Group
 
 ```
 def change_group(omapi, name, group):
@@ -233,7 +233,7 @@ def change_group(omapi, name, group):
         raise OmapiError("changing group of host %s to %s failed" % (name, group))
 ```
 
-#Custom Integration
+# Custom Integration
 
 Assuming there already is a connection named `o` (i.e. a `Omapi` instance, see [Example]).
 To craft your own communication with the server you need to create an `OmapiMessage`, send it, receive a response and evaluate that response being an `OmapiMessage` as well. So here we go and create our first message.
