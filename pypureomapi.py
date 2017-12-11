@@ -1155,6 +1155,31 @@ class Omapi(object):
 		except KeyError:  # hardware-address
 			raise OmapiErrorNotFound()
 
+	def lookup_host(self, name):
+		"""Look for a host object with given name and return the
+		name, mac, and ip address
+
+		@type name: str
+		@rtype: str or None
+		@raises ValueError:
+		@raises OmapiError:
+		@raises OmapiErrorNotFound: if no host object with the given name
+				could be found or the object lacks an ip address or mac
+		@raises socket.error:
+		"""
+		msg = OmapiMessage.open(b"host")
+		msg.obj.append((b"name", name.encode('utf-8')))
+		response = self.query_server(msg)
+		if response.opcode != OMAPI_OP_UPDATE:
+			raise OmapiErrorNotFound()
+		try:
+			ip = unpack_ip(dict(response.obj)[b"ip-address"])
+			mac = unpack_mac(dict(response.obj)[b"hardware-address"])
+			hostname = dict(response.obj)[b"name"]
+			return {'ip': ip, 'mac': mac, 'hostname': hostname.decode('utf-8')}
+		except KeyError:
+			raise OmapiErrorNotFound()
+
 	def add_host_supersede_name(omapi, ip, mac, name):  # pylint:disable=E0213
 		"""Add a host with a fixed-address and override its hostname with the given name.
 		@type omapi: Omapi
