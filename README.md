@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/CygnusNetworks/pypureomapi.svg?branch=master)](https://travis-ci.org/CygnusNetworks/pypureomapi) 
-[![Latest Version](https://img.shields.io/pypi/v/pypureomapi.svg)](https://pypi.python.org/pypi/pypureomapi) [![Downloads](https://img.shields.io/pypi/dm/pypureomapi.svg)](https://pypi.python.org/pypi/pypureomapi) [![Downloads PyPi](https://img.shields.io/pypi/dw/pypureomapi.svg)](https://pypi.python.org/pypi/pypureomapi)
+[![Latest Version](https://img.shields.io/pypi/v/pypureomapi.svg)](https://pypi.python.org/pypi/pypureomapi)
 [![PyPi Status](https://img.shields.io/pypi/status/pypureomapi.svg)](https://pypi.python.org/pypi/pypureomapi) [![PyPi Versions](https://img.shields.io/pypi/pyversions/pypureomapi.svg)](https://pypi.python.org/pypi/pypureomapi)
 
 pypureomapi
