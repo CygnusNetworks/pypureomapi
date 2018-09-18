@@ -1241,6 +1241,42 @@ class Omapi(object):
 		except KeyError:  # client hostname
 			raise OmapiErrorNotFound()
 
+	def add_host_supersede(self, ip, mac, name, hostname=None, router=None, domain=None):
+		"""Create a host object with given ip, mac, name, hostname, router and
+		domain. hostname, router and domain are optional arguments.
+
+		@type ip: str
+		@type mac: str
+		@type name: str
+		@type hostname: str
+		@type router: str
+		@type domain: str
+		@raises OmapiError:
+		@raises socket.error:
+		"""
+		stmts = []
+
+		msg = OmapiMessage.open(b"host")
+		msg.message.append((b"create", struct.pack("!I", 1)))
+		msg.obj.append((b"name", name))
+		msg.obj.append((b"hardware-address", pack_mac(mac)))
+		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
+		msg.obj.append((b"ip-address", pack_ip(ip)))
+		if hostname:
+			stmts.append('supersede host-name "{0}";\n '.format(hostname))
+		if router:
+			stmts.append('supersede routers {0};\n '.format(router))
+		if domain:
+			stmts.append('supersede domain-name "{0}";'.format(domain))
+		if stmts:
+			encoded_stmts = ''.join(stmts).encode('utf-8')
+			msg.obj.append((b"statements", encoded_stmts))
+
+		response = self.query_server(msg)
+		if response.opcode != OMAPI_OP_UPDATE:
+			raise OmapiError("add failed")
+
+
 if __name__ == '__main__':
 	import doctest
 	doctest.testmod()
