@@ -10,6 +10,7 @@ pypureomapi is a Python implementation of the DHCP OMAPI protocol used in the mo
 # Example omapi lookup
 
 ```
+from __future__ import print_function
 import pypureomapi
 
 KEYNAME="defomapi"
@@ -22,11 +23,11 @@ port = 7911 # Port of the omapi service
 try:
     o = pypureomapi.Omapi(dhcp_server_ip,port, KEYNAME, BASE64_ENCODED_KEY)
     mac = o.lookup_mac(lease_ip)
-    print "%s is currently assigned to mac %s" % (lease_ip, mac)
+    print("%s is currently assigned to mac %s" % (lease_ip, mac))
 except pypureomapi.OmapiErrorNotFound:
-    print "%s is currently not assigned" % (lease_ip,)
+    print("%s is currently not assigned" % (lease_ip,))
 except pypureomapi.OmapiError, err:
-    print "an error occurred: %r" % (err,)
+    print("an error occurred: %r" % (err,))
 ```
 
 # Server side configugration for ISC DHCP3
@@ -36,14 +37,14 @@ To allow a OMAPI access to your ISC DHCP3 DHCP Server you should define the foll
 ```
 key defomapi {
 	algorithm hmac-md5;
-	secret +bFQtBCta6j2vWkjPkNFtgA==;
+	secret +bFQtBCta6j2vWkjPkNFtgA==; # FIXME: replace by your own dnssec key (see below)
 };
 
 omapi-key defomapi;
 omapi-port 7911;
 ```
 
-Replace the given secret by a key created on your own!
+**Replace the given secret by a key created on your own!**
 
 To generate a key use the following command:
 
