@@ -1,3 +1,9 @@
+pypureomapi (0.7) unstable; urgency=low
+
+  * add new method add_host_supersede
+
+ -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Fri, 21 Sep 2018 15:14:59 +0200
+
 pypureomapi (0.6) unstable; urgency=low
 
   * add optional timeout parameter

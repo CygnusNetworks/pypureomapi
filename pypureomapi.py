@@ -37,7 +37,7 @@
 __author__ = "Helmut Grohne, Dr. Torge Szczepanek"
 __copyright__ = "Cygnus Networks GmbH"
 __license__ = "Apache-2.0"
-__version__ = "0.6"
+__version__ = "0.7"
 __maintainer__ = "Dr. Torge Szczepanek"
 __email__ = "debian@cygnusnetworks.de"
 
