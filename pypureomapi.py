@@ -34,16 +34,6 @@
 # dictionary = entry* 0x00 0x00
 # entry = key (net16str) value (net32str)
 
-__author__ = "Helmut Grohne, Dr. Torge Szczepanek"
-__copyright__ = "Cygnus Networks GmbH"
-__license__ = "Apache-2.0"
-__version__ = "0.7"
-__maintainer__ = "Dr. Torge Szczepanek"
-__email__ = "debian@cygnusnetworks.de"
-
-
-__all__ = []
-
 import binascii
 import struct
 import hmac
@@ -56,6 +46,16 @@ try:
 	basestring
 except NameError:
 	basestring = str  # pylint:disable=W0622
+
+__author__ = "Helmut Grohne, Dr. Torge Szczepanek"
+__copyright__ = "Cygnus Networks GmbH"
+__license__ = "Apache-2.0"
+__version__ = "0.7"
+__maintainer__ = "Dr. Torge Szczepanek"
+__email__ = "debian@cygnusnetworks.de"
+
+
+__all__ = []
 
 logger = logging.getLogger("pypureomapi")
 sysrand = random.SystemRandom()
@@ -78,11 +78,13 @@ def repr_opcode(opcode):
 	opmap = {1: "open", 2: "refresh", 3: "update", 4: "notify", 5: "status", 6: "delete"}
 	return opmap.get(opcode, "unknown (%d)" % opcode)
 
+
 __all__.append("OmapiError")
 
 
 class OmapiError(Exception):
 	"""OMAPI exception base class."""
+
 
 __all__.append("OmapiSizeLimitError")
 
@@ -91,6 +93,7 @@ class OmapiSizeLimitError(OmapiError):
 	"""Packet size limit reached."""
 	def __init__(self):
 		OmapiError.__init__(self, "Packet size limit reached.")
+
 
 __all__.append("OmapiErrorNotFound")
 
@@ -355,6 +358,7 @@ class OmapiHMACMD5Authenticator(OmapiAuthenticatorBase):
 		"""
 		return hmac.HMAC(self.key, message).digest()
 
+
 __all__.append("OmapiMessage")
 
 
@@ -526,7 +530,7 @@ class OmapiMessage(object):  # pylint:disable=too-many-instance-attributes
 		@rtype: str
 		@returns: a barely human readable representation in one line
 		"""
-		return ("authid=%d authlen=%d opcode=%s handle=%d tid=%d rid=%d message=%r obj=%r signature=%r") % (self.authid, len(self.signature), repr_opcode(self.opcode), self.handle, self.tid, self.rid, self.message, self.obj, self.signature)
+		return "authid=%d authlen=%d opcode=%s handle=%d tid=%d rid=%d message=%r obj=%r signature=%r" % (self.authid, len(self.signature), repr_opcode(self.opcode), self.handle, self.tid, self.rid, self.message, self.obj, self.signature)
 
 
 def parse_map(filterfun, parser):
@@ -689,6 +693,7 @@ class InBuffer(object):
 		return parse_map(lambda args:  # skip authlen in args:
 				OmapiMessage(*(args[0:1] + args[2:])), parser)  # pylint:disable=star-args
 
+
 if isinstance(bytes(b"x")[0], int):
 	def bytes_to_int_seq(b):
 		return b
@@ -699,6 +704,7 @@ else:
 
 	def int_seq_to_bytes(s):
 		return "".join([chr(x) for x in s])  # raises ValueError
+
 
 __all__.append("pack_ip")
 
@@ -726,6 +732,7 @@ def pack_ip(ipstr):
 	parts = [int(x) for x in parts]  # raises ValueError
 	return int_seq_to_bytes(parts)  # raises ValueError
 
+
 __all__.append("unpack_ip")
 
 
@@ -749,6 +756,7 @@ def unpack_ip(fourbytes):
 	if len(fourbytes) != 4:
 		raise ValueError("given buffer is not exactly four bytes long")
 	return ".".join([str(x) for x in bytes_to_int_seq(fourbytes)])
+
 
 __all__.append("pack_mac")
 
@@ -777,6 +785,7 @@ def pack_mac(macstr):
 	parts = [int(part, 16) for part in parts]  # raises ValueError
 	return int_seq_to_bytes(parts)  # raises ValueError
 
+
 __all__.append("unpack_mac")
 
 
@@ -803,9 +812,8 @@ def unpack_mac(sixbytes):
 
 
 class LazyStr(object):  # pylint:disable=too-few-public-methods
-
-	def __init__(self, function):
-		self.function = function
+	def __init__(self, fnc):
+		self.function = fnc
 
 	def __str__(self):
 		return self.function()
@@ -926,6 +934,7 @@ class OmapiProtocol(object):
 			message.sign(self.authenticators[self.defauth])
 		logger.debug("sending %s", LazyStr(message.dump_oneline))
 		self.transport.write(message.as_string())
+
 
 __all__.append("Omapi")
 
@@ -1180,9 +1189,9 @@ class Omapi(object):
 		except KeyError:
 			raise OmapiErrorNotFound()
 
-	def add_host_supersede_name(omapi, ip, mac, name):  # pylint:disable=E0213
+	def add_host_supersede_name(self, ip, mac, name):  # pylint:disable=E0213
 		"""Add a host with a fixed-address and override its hostname with the given name.
-		@type omapi: Omapi
+		@type self: Omapi
 		@type ip: str
 		@type mac: str
 		@type name: str
@@ -1198,14 +1207,12 @@ class Omapi(object):
 		msg.obj.append((b"ip-address", pack_ip(ip)))
 		msg.obj.append((b"name", name.encode('utf-8')))
 		msg.obj.append((b"statements", 'supersede host-name "{0}";'.format(name).encode('utf-8')))
-		response = omapi.query_server(msg)
+		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError("add failed")
 
 	def add_host_without_ip(self, mac):
 		"""Create a host object with given mac address without assigning a static ip address.
-
-		@type ip: str
 		@type mac: str
 		@raises ValueError:
 		@raises OmapiError:
@@ -1237,7 +1244,7 @@ class Omapi(object):
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiErrorNotFound()
 		try:
-			return (dict(response.obj)[b"client-hostname"])
+			return dict(response.obj)[b"client-hostname"]
 		except KeyError:  # client hostname
 			raise OmapiErrorNotFound()
 
