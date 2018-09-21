@@ -1248,7 +1248,7 @@ class Omapi(object):
 		except KeyError:  # client hostname
 			raise OmapiErrorNotFound()
 
-	def add_host_supersede(self, ip, mac, name, hostname=None, router=None, domain=None):
+	def add_host_supersede(self, ip, mac, name, hostname=None, router=None, domain=None):  # pylint:disable=too-many-arguments
 		"""Create a host object with given ip, mac, name, hostname, router and
 		domain. hostname, router and domain are optional arguments.
 
