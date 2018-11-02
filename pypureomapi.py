@@ -1211,7 +1211,7 @@ class Omapi(object):
 		@type ip: str
 		@type mac: str
 		@type name: str
-		@rtype: dict or None
+		@rtype: dict or str (for a single key) or None
 		@raises ValueError:
 		@raises OmapiError:
 		@raises OmapiErrorNotFound: if no host object with the given name
@@ -1239,6 +1239,8 @@ class Omapi(object):
 				if elem == 'name':
 					hostname = dict(response.obj)[b"name"]
 					result['hostname'] = hostname.decode('utf-8')
+			if len(result) == 1:
+				result = list(result.values())[0]
 			return result
 		except KeyError:
 			raise OmapiErrorNotFound()
