@@ -1203,7 +1203,7 @@ class Omapi(object):
 		"""
 		msg = OmapiMessage.open(b"host")
 		msg.obj.append((b"hardware-address", pack_mac(mac)))
-        msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
+		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiErrorNotFound()
