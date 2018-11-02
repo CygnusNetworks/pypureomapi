@@ -1201,17 +1201,45 @@ class Omapi(object):
 				could be found or the object lacks an ip address or mac
 		@raises socket.error:
 		"""
-		msg = OmapiMessage.open(b"host")
-		msg.obj.append((b"hardware-address", pack_mac(mac)))
-		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
+		return self.lookup('host', ['ip', 'mac', 'name'], mac=mac)
+
+	def lookup(self, ltype, rvalues=[], ip=None, mac=None, name=None):
+		"""Generic Lookup function
+
+		@type ltype: str
+		@type rvalues: list
+		@type ip: str
+		@type mac: str
+		@type name: str
+		@rtype: dict or None
+		@raises ValueError:
+		@raises OmapiError:
+		@raises OmapiErrorNotFound: if no host object with the given name
+				could be found or the object lacks an ip address or mac
+		@raises socket.error:
+		"""
+		msg = OmapiMessage.open(ltype.encode('utf-8'))
+		if ip:
+			msg.obj.append((b"ip-address", pack_ip(ip)))
+		if mac:
+			msg.obj.append((b"hardware-address", pack_mac(mac)))
+			msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
+		if name:
+			msg.obj.append((b"name", name.encode('utf-8')))
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiErrorNotFound()
 		try:
-			ip = unpack_ip(dict(response.obj)[b"ip-address"])
-			mac = unpack_mac(dict(response.obj)[b"hardware-address"])
-			hostname = dict(response.obj)[b"name"]
-			return {'ip': ip, 'mac': mac, 'hostname': hostname.decode('utf-8')}
+			result = {}
+			for elem in rvalues:
+				if elem == 'ip':
+					result['ip'] = unpack_ip(dict(response.obj)[b"ip-address"])
+				if elem == 'mac':
+					result['mac'] = unpack_mac(dict(response.obj)[b"hardware-address"])
+				if elem == 'name':
+					hostname = dict(response.obj)[b"name"]
+					result['hostname'] = hostname.decode('utf-8')
+			return result
 		except KeyError:
 			raise OmapiErrorNotFound()
 
