@@ -1211,7 +1211,7 @@ class Omapi(object):
 		@type ip: str
 		@type mac: str
 		@type name: str
-		@rtype: dict or str (for a single key) or None
+		@rtype: dict or str (if len(rvalues) == 1) or None
 		@raises ValueError:
 		@raises OmapiError:
 		@raises OmapiErrorNotFound: if no host object with the given name
