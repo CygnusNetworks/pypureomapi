@@ -1214,15 +1214,7 @@ class Omapi(object):
 				address could be found or the object lacks a hostname
 		@raises socket.error:
 		"""
-		msg = OmapiMessage.open(b"lease")
-		msg.obj.append((b"ip-address", pack_ip(ip)))
-		response = self.query_server(msg)
-		if response.opcode != OMAPI_OP_UPDATE:
-			raise OmapiErrorNotFound()
-		try:
-			return dict(response.obj)[b"client-hostname"]
-		except KeyError:  # client hostname
-			raise OmapiErrorNotFound()
+		return self.lookup("lease", ["client-hostname"], ip=ip)
 
 	def lookup(self, ltype, rvalues=[], ip=None, mac=None, name=None):
 		"""Generic Lookup function
@@ -1253,6 +1245,7 @@ class Omapi(object):
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiErrorNotFound()
 		try:
+			print("response is ", dict(response.obj))
 			result = {}
 			for elem in rvalues:
 				if elem == 'ip':
@@ -1262,6 +1255,9 @@ class Omapi(object):
 				if elem == 'name':
 					hostname = dict(response.obj)[b"name"]
 					result['hostname'] = hostname.decode('utf-8')
+				if elem == 'client-hostname':
+					hostname = dict(response.obj)[b"client-hostname"]
+					result['client-hostname'] = hostname.decode('utf-8')
 			if len(result) == 1:
 				result = list(result.values())[0]
 			return result
