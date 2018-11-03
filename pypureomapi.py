@@ -1239,7 +1239,9 @@ class Omapi(object):
 				could be found or the object lacks an ip address or mac
 		@raises socket.error:
 		"""
-		msg = OmapiMessage.open(ltype.encode('utf-8'))
+		ltype_utf = ltype.encode("utf-8")
+		assert ltype_utf in [b"host", b"lease"]
+		msg = OmapiMessage.open(ltype_utf)
 		if ip:
 			msg.obj.append((b"ip-address", pack_ip(ip)))
 		if mac:
