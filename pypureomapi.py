@@ -36,6 +36,7 @@
 
 import binascii
 import struct
+import hashlib
 import hmac
 import io
 import logging
@@ -356,7 +357,7 @@ class OmapiHMACMD5Authenticator(OmapiAuthenticatorBase):
 		@rtype: bytes
 		@returns: a signature of length self.authlen
 		"""
-		return hmac.HMAC(self.key, message).digest()
+		return hmac.HMAC(self.key, message, digestmod=hashlib.md5).digest()
 
 
 __all__.append("OmapiMessage")
