@@ -1203,6 +1203,27 @@ class Omapi(object):
 		"""
 		return self.lookup('host', ['ip', 'mac', 'name'], mac=mac)
 
+	def lookup_hostname(self, ip):
+		"""Look up a lease object with given ip address and return the associated client hostname.
+
+		@type ip: str
+		@rtype: str or None
+		@raises ValueError:
+		@raises OmapiError:
+		@raises OmapiErrorNotFound: if no lease object with the given ip
+				address could be found or the object lacks a hostname
+		@raises socket.error:
+		"""
+		msg = OmapiMessage.open(b"lease")
+		msg.obj.append((b"ip-address", pack_ip(ip)))
+		response = self.query_server(msg)
+		if response.opcode != OMAPI_OP_UPDATE:
+			raise OmapiErrorNotFound()
+		try:
+			return dict(response.obj)[b"client-hostname"]
+		except KeyError:  # client hostname
+			raise OmapiErrorNotFound()
+
 	def lookup(self, ltype, rvalues=[], ip=None, mac=None, name=None):
 		"""Generic Lookup function
 
@@ -1282,27 +1303,6 @@ class Omapi(object):
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError("add failed")
-
-	def lookup_hostname(self, ip):
-		"""Look up a lease object with given ip address and return the associated client hostname.
-
-		@type ip: str
-		@rtype: str or None
-		@raises ValueError:
-		@raises OmapiError:
-		@raises OmapiErrorNotFound: if no lease object with the given ip
-				address could be found or the object lacks a hostname
-		@raises socket.error:
-		"""
-		msg = OmapiMessage.open(b"lease")
-		msg.obj.append((b"ip-address", pack_ip(ip)))
-		response = self.query_server(msg)
-		if response.opcode != OMAPI_OP_UPDATE:
-			raise OmapiErrorNotFound()
-		try:
-			return dict(response.obj)[b"client-hostname"]
-		except KeyError:  # client hostname
-			raise OmapiErrorNotFound()
 
 	def add_host_supersede(self, ip, mac, name, hostname=None, router=None, domain=None):  # pylint:disable=too-many-arguments
 		"""Create a host object with given ip, mac, name, hostname, router and
