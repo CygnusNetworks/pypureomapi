@@ -1185,7 +1185,7 @@ class Omapi(object):
 			ip = unpack_ip(dict(response.obj)[b"ip-address"])
 			mac = unpack_mac(dict(response.obj)[b"hardware-address"])
 			hostname = dict(response.obj)[b"name"]
-			return {'ip': ip, 'mac': mac, 'hostname': hostname.decode('utf-8')}
+			return {"ip": ip, "mac": mac, "hostname": hostname.decode('utf-8')}
 		except KeyError:
 			raise OmapiErrorNotFound()
 
@@ -1201,7 +1201,7 @@ class Omapi(object):
 				could be found or the object lacks an ip address or mac
 		@raises socket.error:
 		"""
-		return self.lookup('host', ['ip', 'mac', 'name'], mac=mac)
+		return self.lookup("host", ["ip", "mac", "name"], mac=mac)
 
 	def lookup_hostname(self, ip):
 		"""Look up a lease object with given ip address and return the associated client hostname.
@@ -1248,16 +1248,16 @@ class Omapi(object):
 			print("response is ", dict(response.obj))
 			result = {}
 			for elem in rvalues:
-				if elem == 'ip':
-					result['ip'] = unpack_ip(dict(response.obj)[b"ip-address"])
-				if elem == 'mac':
-					result['mac'] = unpack_mac(dict(response.obj)[b"hardware-address"])
-				if elem == 'name':
+				if elem == "ip":
+					result["ip"] = unpack_ip(dict(response.obj)[b"ip-address"])
+				if elem == "mac":
+					result["mac"] = unpack_mac(dict(response.obj)[b"hardware-address"])
+				if elem == "name":
 					hostname = dict(response.obj)[b"name"]
-					result['hostname'] = hostname.decode('utf-8')
-				if elem == 'client-hostname':
+					result["hostname"] = hostname.decode("utf-8")
+				if elem == "client-hostname":
 					hostname = dict(response.obj)[b"client-hostname"]
-					result['client-hostname'] = hostname.decode('utf-8')
+					result["client-hostname"] = hostname.decode("utf-8")
 			if len(result) == 1:
 				result = list(result.values())[0]
 			return result
@@ -1330,7 +1330,7 @@ class Omapi(object):
 		if domain:
 			stmts.append('supersede domain-name "{0}";'.format(domain))
 		if stmts:
-			encoded_stmts = ''.join(stmts).encode('utf-8')
+			encoded_stmts = "".join(stmts).encode("utf-8")
 			msg.obj.append((b"statements", encoded_stmts))
 
 		response = self.query_server(msg)
@@ -1338,6 +1338,6 @@ class Omapi(object):
 			raise OmapiError("add failed")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 	import doctest
 	doctest.testmod()
