@@ -1132,15 +1132,7 @@ class Omapi(object):
 				address could be found or the object lacks an ip address
 		@raises socket.error:
 		"""
-		msg = OmapiMessage.open(b"lease")
-		msg.obj.append((b"hardware-address", pack_mac(mac)))
-		response = self.query_server(msg)
-		if response.opcode != OMAPI_OP_UPDATE:
-			raise OmapiErrorNotFound()
-		try:
-			return unpack_ip(dict(response.obj)[b"ip-address"])
-		except KeyError:  # ip-address
-			raise OmapiErrorNotFound()
+		return self.lookup("lease", ["ip"], mac=mac)
 
 	def lookup_mac(self, ip):
 		"""Look up a lease object with given ip address and return the
@@ -1154,15 +1146,7 @@ class Omapi(object):
 				address could be found or the object lacks a mac address
 		@raises socket.error:
 		"""
-		msg = OmapiMessage.open(b"lease")
-		msg.obj.append((b"ip-address", pack_ip(ip)))
-		response = self.query_server(msg)
-		if response.opcode != OMAPI_OP_UPDATE:
-			raise OmapiErrorNotFound()
-		try:
-			return unpack_mac(dict(response.obj)[b"hardware-address"])
-		except KeyError:  # hardware-address
-			raise OmapiErrorNotFound()
+		return self.lookup("lease", ["mac"], ip=ip)
 
 	def lookup_host(self, name):
 		"""Look for a host object with given name and return the
@@ -1245,7 +1229,7 @@ class Omapi(object):
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiErrorNotFound()
 		try:
-			print("response is ", dict(response.obj))
+			# print("response is ", dict(response.obj))
 			result = {}
 			for elem in rvalues:
 				if elem == "ip":
