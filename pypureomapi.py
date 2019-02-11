@@ -1088,6 +1088,8 @@ class Omapi(object):
 		@type mac: str
 		@raises ValueError:
 		@raises OmapiError:
+		@raises OmapiErrorNotFound: if no lease object with the given
+				mac address could be found
 		@raises socket.error:
 		"""
 		msg = OmapiMessage.open(b"host")
@@ -1108,17 +1110,14 @@ class Omapi(object):
 		@type mac: str
 		@raises ValueError:
 		@raises OmapiError:
+		@raises OmapiErrorNotFound: if no lease object with the given
+				mac address could be found or the object lacks an ipaddress
 		@raises socket.error:
 		"""
-		msg = OmapiMessage.open(b"host")
-		msg.obj.append((b"hardware-address", pack_mac(mac)))
-		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
-		response = self.query_server(msg)
-		if response.opcode != OMAPI_OP_UPDATE:
-			raise OmapiErrorNotFound()
+		res = self.lookup_by_host(mac=mac)
 		try:
-			return unpack_ip(dict(response.obj)[b"ip-address"])
-		except KeyError:  # ip-address
+			return res["ip-address"]
+		except KeyError:
 			raise OmapiErrorNotFound()
 
 	def lookup_ip(self, mac):
@@ -1133,7 +1132,11 @@ class Omapi(object):
 				address could be found or the object lacks an ip address
 		@raises socket.error:
 		"""
-		return self.lookup("lease", ["ip"], mac=mac)
+		res = self.lookup_by_lease(mac=mac)
+		try:
+			return res["ip-address"]
+		except KeyError:
+			raise OmapiErrorNotFound()
 
 	def lookup_mac(self, ip):
 		"""Look up a lease object with given ip address and return the
@@ -1147,30 +1150,27 @@ class Omapi(object):
 				address could be found or the object lacks a mac address
 		@raises socket.error:
 		"""
-		return self.lookup("lease", ["mac"], ip=ip)
+		res = self.lookup_by_lease(ip=ip)
+		try:
+			return res["hardware-address"]
+		except KeyError:
+			raise OmapiErrorNotFound()
 
 	def lookup_host(self, name):
 		"""Look for a host object with given name and return the
 		name, mac, and ip address
 
 		@type name: str
-		@rtype: str or None
+		@rtype: dict or None
 		@raises ValueError:
 		@raises OmapiError:
 		@raises OmapiErrorNotFound: if no host object with the given name
 				could be found or the object lacks an ip address or mac
 		@raises socket.error:
 		"""
-		msg = OmapiMessage.open(b"host")
-		msg.obj.append((b"name", name.encode('utf-8')))
-		response = self.query_server(msg)
-		if response.opcode != OMAPI_OP_UPDATE:
-			raise OmapiErrorNotFound()
+		res = self.lookup_by_host(name=name)
 		try:
-			ip = unpack_ip(dict(response.obj)[b"ip-address"])
-			mac = unpack_mac(dict(response.obj)[b"hardware-address"])
-			hostname = dict(response.obj)[b"name"]
-			return {"ip": ip, "mac": mac, "hostname": hostname.decode('utf-8')}
+			return dict(ip=res["ip-address"], mac=res["hardware-address"], hostname=res["name"].decode('utf-8'))
 		except KeyError:
 			raise OmapiErrorNotFound()
 
@@ -1186,7 +1186,11 @@ class Omapi(object):
 				could be found or the object lacks an ip address or mac
 		@raises socket.error:
 		"""
-		return self.lookup("host", ["ip", "mac", "name"], mac=mac)
+		res = self.lookup_by_host(mac=mac)
+		try:
+			return dict(ip=res["ip-address"], mac=res["hardware-address"], name=res["name"].decode('utf-8'))
+		except KeyError:
+			raise OmapiErrorNotFound
 
 	def lookup_hostname(self, ip):
 		"""Look up a lease object with given ip address and return the associated client hostname.
@@ -1199,9 +1203,18 @@ class Omapi(object):
 				address could be found or the object lacks a hostname
 		@raises socket.error:
 		"""
-		return self.lookup("lease", ["client-hostname"], ip=ip)
+		res = self.lookup_by_lease(ip=ip)
+		if "client-hostname" not in res:
+			raise OmapiErrorNotFound
+		return res["client-hostname"].decode('utf-8')
 
-	def lookup(self, ltype, rvalues=[], ip=None, mac=None, name=None):
+	def lookup_by_host(self, **kwargs):
+		return self.__lookup("host", **kwargs)
+
+	def lookup_by_lease(self, **kwargs):
+		return self.__lookup("lease", **kwargs)
+
+	def __lookup(self, ltype, **kwargs):
 		"""Generic Lookup function
 
 		@type ltype: str
@@ -1219,35 +1232,29 @@ class Omapi(object):
 		ltype_utf = ltype.encode("utf-8")
 		assert ltype_utf in [b"host", b"lease"]
 		msg = OmapiMessage.open(ltype_utf)
-		if ip:
-			msg.obj.append((b"ip-address", pack_ip(ip)))
-		if mac:
-			msg.obj.append((b"hardware-address", pack_mac(mac)))
-			msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
-		if name:
-			msg.obj.append((b"name", name.encode('utf-8')))
+		for k in kwargs:
+			k.replace("_", "-")
+			if k in ["ip", "ip-address"]:
+				msg.obj.append((b"ip-address", pack_ip(kwargs[k])))
+			elif k in ["mac", "hardware-address"]:
+				msg.obj.append((b"hardware-address", pack_mac(kwargs[k])))
+				msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
+			elif k == "name":
+				msg.obj.append((b"name", kwargs[k].encode('utf-8')))
+			else:
+				msg.obj.append((str(k).encode(), kwargs[k].encode('utf-8')))
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiErrorNotFound()
-		try:
-			# print("response is ", dict(response.obj))
-			result = {}
-			for elem in rvalues:
-				if elem == "ip":
-					result["ip"] = unpack_ip(dict(response.obj)[b"ip-address"])
-				if elem == "mac":
-					result["mac"] = unpack_mac(dict(response.obj)[b"hardware-address"])
-				if elem == "name":
-					hostname = dict(response.obj)[b"name"]
-					result["hostname"] = hostname.decode("utf-8")
-				if elem == "client-hostname":
-					hostname = dict(response.obj)[b"client-hostname"]
-					result["client-hostname"] = hostname.decode("utf-8")
-			if len(result) == 1:
-				result = list(result.values())[0]
-			return result
-		except KeyError:
-			raise OmapiErrorNotFound()
+		res = dict()
+		for k, v in dict(response.obj).items():
+			_k = k.decode('utf-8')
+			if _k == "ip-address":
+				v = unpack_ip(v)
+			elif _k in ["hardware-address"]:
+				v = unpack_mac(v)
+			res[_k] = v
+		return res
 
 	def add_host_supersede_name(self, ip, mac, name):  # pylint:disable=E0213
 		"""Add a host with a fixed-address and override its hostname with the given name.
