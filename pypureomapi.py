@@ -105,6 +105,15 @@ class OmapiErrorNotFound(OmapiError):
 		OmapiError.__init__(self, "not found")
 
 
+__all__.append("OmapiErrorAttributeNotFound")
+
+
+class OmapiErrorAttributeNotFound(OmapiErrorNotFound):
+	"""Not found."""
+	def __init__(self):
+		OmapiError.__init__(self, "not attribute not found")
+
+
 class OutBuffer(object):
 	"""Helper class for constructing network packets."""
 	sizelimit = 65536
@@ -1118,7 +1127,7 @@ class Omapi(object):
 		try:
 			return res["ip-address"]
 		except KeyError:
-			raise OmapiErrorNotFound()
+			raise OmapiErrorAttributeNotFound()
 
 	def lookup_ip(self, mac):
 		"""Look for a lease object with given mac address and return the
@@ -1136,7 +1145,7 @@ class Omapi(object):
 		try:
 			return res["ip-address"]
 		except KeyError:
-			raise OmapiErrorNotFound()
+			raise OmapiErrorAttributeNotFound()
 
 	def lookup_mac(self, ip):
 		"""Look up a lease object with given ip address and return the
@@ -1154,7 +1163,7 @@ class Omapi(object):
 		try:
 			return res["hardware-address"]
 		except KeyError:
-			raise OmapiErrorNotFound()
+			raise OmapiErrorAttributeNotFound()
 
 	def lookup_host(self, name):
 		"""Look for a host object with given name and return the
@@ -1172,7 +1181,7 @@ class Omapi(object):
 		try:
 			return dict(ip=res["ip-address"], mac=res["hardware-address"], hostname=res["name"].decode('utf-8'))
 		except KeyError:
-			raise OmapiErrorNotFound()
+			raise OmapiErrorAttributeNotFound()
 
 	def lookup_host_host(self, mac):
 		"""Look for a host object with given mac address and return the
@@ -1190,7 +1199,7 @@ class Omapi(object):
 		try:
 			return dict(ip=res["ip-address"], mac=res["hardware-address"], name=res["name"].decode('utf-8'))
 		except KeyError:
-			raise OmapiErrorNotFound
+			raise OmapiErrorAttributeNotFound()
 
 	def lookup_hostname(self, ip):
 		"""Look up a lease object with given ip address and return the associated client hostname.
@@ -1205,7 +1214,7 @@ class Omapi(object):
 		"""
 		res = self.lookup_by_lease(ip=ip)
 		if "client-hostname" not in res:
-			raise OmapiErrorNotFound
+			raise OmapiErrorAttributeNotFound()
 		return res["client-hostname"].decode('utf-8')
 
 	def lookup_by_host(self, **kwargs):
