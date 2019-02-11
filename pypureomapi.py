@@ -1072,28 +1072,6 @@ class Omapi(object):
 		self.protocol.defauth = authid
 		logger.debug("successfully initialized default authid %d", authid)
 
-	def del_host(self, mac):
-		"""Delete a host object with with given mac address.
-
-		@type mac: str
-		@raises ValueError:
-		@raises OmapiError:
-		@raises OmapiErrorNotFound: if no lease object with the given
-				mac address could be found
-		@raises socket.error:
-		"""
-		msg = OmapiMessage.open(b"host")
-		msg.obj.append((b"hardware-address", pack_mac(mac)))
-		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
-		response = self.query_server(msg)
-		if response.opcode != OMAPI_OP_UPDATE:
-			raise OmapiErrorNotFound()
-		if response.handle == 0:
-			raise OmapiError("received invalid handle from server")
-		response = self.query_server(OmapiMessage.delete(response.handle))
-		if response.opcode != OMAPI_OP_STATUS:
-			raise OmapiError("delete failed")
-
 	def lookup_ip_host(self, mac):
 		"""Lookup a host object with with given mac address.
 
@@ -1337,6 +1315,28 @@ class Omapi(object):
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError("add failed")
+
+	def del_host(self, mac):
+		"""Delete a host object with with given mac address.
+
+		@type mac: str
+		@raises ValueError:
+		@raises OmapiError:
+		@raises OmapiErrorNotFound: if no lease object with the given
+				mac address could be found
+		@raises socket.error:
+		"""
+		msg = OmapiMessage.open(b"host")
+		msg.obj.append((b"hardware-address", pack_mac(mac)))
+		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
+		response = self.query_server(msg)
+		if response.opcode != OMAPI_OP_UPDATE:
+			raise OmapiErrorNotFound()
+		if response.handle == 0:
+			raise OmapiError("received invalid handle from server")
+		response = self.query_server(OmapiMessage.delete(response.handle))
+		if response.opcode != OMAPI_OP_STATUS:
+			raise OmapiError("delete failed")
 
 
 if __name__ == "__main__":
