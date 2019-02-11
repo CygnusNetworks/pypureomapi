@@ -1201,6 +1201,8 @@ class Omapi(object):
 		assert ltype_utf in [b"host", b"lease"]
 		msg = OmapiMessage.open(ltype_utf)
 		for k in kwargs:
+			if k == "raw":
+				continue
 			_k = k.replace("_", "-")
 			if _k in ["ip", "ip-address"]:
 				msg.obj.append((b"ip-address", pack_ip(kwargs[k])))
@@ -1214,13 +1216,22 @@ class Omapi(object):
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiErrorNotFound()
+		if "raw" in kwargs and kwargs["raw"]:
+			return dict(response.obj)
 		res = dict()
 		for k, v in dict(response.obj).items():
 			_k = k.decode('utf-8')
-			if _k == "ip-address":
-				v = unpack_ip(v)
-			elif _k in ["hardware-address"]:
-				v = unpack_mac(v)
+			try:
+				if _k == "ip-address":
+					v = unpack_ip(v)
+				elif _k in ["hardware-address"]:
+					v = unpack_mac(v)
+				elif _k in ["starts", "ends", "tstp", "tsfp", "atsfp", "cltt", "subnet", "pool", "state", "hardware-type"]:
+					v = struct.unpack(">I", v)[0]
+				elif _k in ["flags"]:
+					v = struct.unpack(">I", v)[0]
+			except struct.error:
+				pass
 			res[_k] = v
 		return res
 
