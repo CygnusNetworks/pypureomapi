@@ -19,7 +19,7 @@
 import distutils.core
 
 distutils.core.setup(name='pypureomapi',
-	version='0.7',
+	version='0.8',
 	description="ISC DHCP OMAPI protocol implementation in Python",
 	long_description="This module provides a OMAPI implementation for managing ISC DHCP server by OMAPI protocol purely in Python code. You can query, create or modify ISC DHCP leases with this module. This module grew out of frustration about pyomapi and later pyomapic, which use swig and the static library provided with ISC DHCP without proper error handling. pypureomapi fixes these issues and can be used more or less as a drop-in replacement for pyomapic.",
 	author='Helmut Grohne',
