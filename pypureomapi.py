@@ -1349,6 +1349,54 @@ class Omapi(object):
 		if response.opcode != OMAPI_OP_STATUS:
 			raise OmapiError("delete failed")
 
+	def add_group(self, groupname, statements):
+		"""
+		Adds a group
+		@type groupname: bytes
+		@type statements: str
+		"""
+		msg = OmapiMessage.open(b"group")
+		msg.message.append(("create", struct.pack("!I", 1)))
+		msg.obj.append(("name", groupname))
+		msg.obj.append(("statements", statements))
+		response = self.query_server(msg)
+		if response.opcode != OMAPI_OP_UPDATE:
+			raise OmapiError("add group failed")
+
+	def add_host_with_group(self, ip, mac, groupname):
+		"""
+		Adds a host with given ip and mac in a group named groupname
+		@type ip: str
+		@type mac: str
+		@type groupname: str
+		"""
+		msg = OmapiMessage.open(b"host")
+		msg.message.append(("create", struct.pack("!I", 1)))
+		msg.message.append(("exclusive", struct.pack("!I", 1)))
+		msg.obj.append(("hardware-address", pack_mac(mac)))
+		msg.obj.append(("hardware-type", struct.pack("!I", 1)))
+		msg.obj.append(("ip-address", pack_ip(ip)))
+		msg.obj.append(("group", groupname))
+		response = self.query_server(msg)
+		if response.opcode != OMAPI_OP_UPDATE:
+			raise OmapiError("add failed")
+
+	def change_group(self, name, group):
+		"""Change the group of a host given the name of the host.
+		@type name: str
+		@type group: str
+		"""
+		m1 = OmapiMessage.open(b"host")
+		m1.update_object(dict(name=name))
+		r1 = self.query_server(m1)
+		if r1.opcode != OMAPI_OP_UPDATE:
+			raise OmapiError("opening host %s failed" % name)
+		m2 = OmapiMessage.update(r1.handle)
+		m2.update_object(dict(group=group))
+		r2 = self.query_server(m2)
+		if r2.opcode != OMAPI_OP_UPDATE:
+			raise OmapiError("changing group of host %s to %s failed" % (name, group))
+
 
 if __name__ == "__main__":
 	import doctest
