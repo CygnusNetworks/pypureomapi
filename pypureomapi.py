@@ -111,7 +111,7 @@ __all__.append("OmapiErrorAttributeNotFound")
 class OmapiErrorAttributeNotFound(OmapiErrorNotFound):
 	"""Not found."""
 	def __init__(self):
-		OmapiError.__init__(self, "not attribute not found")
+		OmapiErrorNotFound.__init__(self, "not attribute not found")
 
 
 class OutBuffer(object):
@@ -949,7 +949,7 @@ class OmapiProtocol(object):
 __all__.append("Omapi")
 
 
-class Omapi(object):
+class Omapi(object):  # pylint:disable=too-many-public-methods
 	def __init__(self, hostname, port, username=None, key=None, timeout=None):  # pylint:disable=too-many-arguments
 		"""
 		@type hostname: str
