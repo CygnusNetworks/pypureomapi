@@ -1242,13 +1242,13 @@ class Omapi(object):
 		assert ltype_utf in [b"host", b"lease"]
 		msg = OmapiMessage.open(ltype_utf)
 		for k in kwargs:
-			k.replace("_", "-")
-			if k in ["ip", "ip-address"]:
+			_k = k.replace("_", "-")
+			if _k in ["ip", "ip-address"]:
 				msg.obj.append((b"ip-address", pack_ip(kwargs[k])))
-			elif k in ["mac", "hardware-address"]:
+			elif _k in ["mac", "hardware-address"]:
 				msg.obj.append((b"hardware-address", pack_mac(kwargs[k])))
 				msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
-			elif k == "name":
+			elif _k == "name":
 				msg.obj.append((b"name", kwargs[k].encode('utf-8')))
 			else:
 				msg.obj.append((str(k).encode(), kwargs[k].encode('utf-8')))
