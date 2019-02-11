@@ -1119,8 +1119,8 @@ class Omapi(object):
 		@type mac: str
 		@raises ValueError:
 		@raises OmapiError:
-		@raises OmapiErrorNotFound: if no lease object with the given
-				mac address could be found or the object lacks an ipaddress
+		@raises OmapiErrorNotFound: if no lease object with the given mac could be found
+		@raises OmapiErrorAttributeNotFound: if lease could be found, but objects lacks a ip
 		@raises socket.error:
 		"""
 		res = self.lookup_by_host(mac=mac)
@@ -1137,8 +1137,8 @@ class Omapi(object):
 		@rtype: str or None
 		@raises ValueError:
 		@raises OmapiError:
-		@raises OmapiErrorNotFound: if no lease object with the given mac
-				address could be found or the object lacks an ip address
+		@raises OmapiErrorNotFound: if no lease object with the given mac could be found
+		@raises OmapiErrorAttributeNotFound: if lease could be found, but objects lacks a ip
 		@raises socket.error:
 		"""
 		res = self.lookup_by_lease(mac=mac)
@@ -1155,8 +1155,8 @@ class Omapi(object):
 		@rtype: str or None
 		@raises ValueError:
 		@raises OmapiError:
-		@raises OmapiErrorNotFound: if no lease object with the given ip
-				address could be found or the object lacks a mac address
+		@raises OmapiErrorNotFound: if no lease object with the given ip could be found
+		@raises OmapiErrorAttributeNotFound: if lease could be found, but objects lacks a mac
 		@raises socket.error:
 		"""
 		res = self.lookup_by_lease(ip=ip)
@@ -1173,8 +1173,8 @@ class Omapi(object):
 		@rtype: dict or None
 		@raises ValueError:
 		@raises OmapiError:
-		@raises OmapiErrorNotFound: if no host object with the given name
-				could be found or the object lacks an ip address or mac
+		@raises OmapiErrorNotFound: if no host object with the given name could be found
+		@raises OmapiErrorAttributeNotFound: if lease could be found, but objects lacks ip, mac or name
 		@raises socket.error:
 		"""
 		res = self.lookup_by_host(name=name)
@@ -1188,11 +1188,11 @@ class Omapi(object):
 		name, mac, and ip address
 
 		@type mac: str
-		@rtype: str or None
+		@rtype: dict or None
 		@raises ValueError:
 		@raises OmapiError:
-		@raises OmapiErrorNotFound: if no host object with the given name
-				could be found or the object lacks an ip address or mac
+		@raises OmapiErrorNotFound: if no host object with the given mac address could be found
+		@raises OmapiErrorAttributeNotFound: if lease could be found, but objects lacks ip, mac or name
 		@raises socket.error:
 		"""
 		res = self.lookup_by_host(mac=mac)
@@ -1208,8 +1208,8 @@ class Omapi(object):
 		@rtype: str or None
 		@raises ValueError:
 		@raises OmapiError:
-		@raises OmapiErrorNotFound: if no lease object with the given ip
-				address could be found or the object lacks a hostname
+		@raises OmapiErrorNotFound: if no lease object with the given ip address could be found
+		@raises OmapiErrorAttributeNotFound: if lease could be found, but objects lacks a hostname
 		@raises socket.error:
 		"""
 		res = self.lookup_by_lease(ip=ip)
