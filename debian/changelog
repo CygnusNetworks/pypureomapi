@@ -4,7 +4,7 @@ pypureomapi (0.8) unstable; urgency=low
   * move group examples to source
   * improve documentation
 
- -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Fri, 21 Sep 2018 15:14:59 +0200
+ -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Mon, 11 Feb 2019 13:29:22 +0100
 
 pypureomapi (0.7) unstable; urgency=low
 
