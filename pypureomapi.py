@@ -1072,25 +1072,6 @@ class Omapi(object):
 		self.protocol.defauth = authid
 		logger.debug("successfully initialized default authid %d", authid)
 
-	def add_host(self, ip, mac):
-		"""Create a host object with given ip address and and mac address.
-
-		@type ip: str
-		@type mac: str
-		@raises ValueError:
-		@raises OmapiError:
-		@raises socket.error:
-		"""
-		msg = OmapiMessage.open(b"host")
-		msg.message.append((b"create", struct.pack("!I", 1)))
-		msg.message.append((b"exclusive", struct.pack("!I", 1)))
-		msg.obj.append((b"hardware-address", pack_mac(mac)))
-		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
-		msg.obj.append((b"ip-address", pack_ip(ip)))
-		response = self.query_server(msg)
-		if response.opcode != OMAPI_OP_UPDATE:
-			raise OmapiError("add failed")
-
 	def del_host(self, mac):
 		"""Delete a host object with with given mac address.
 
@@ -1264,6 +1245,25 @@ class Omapi(object):
 				v = unpack_mac(v)
 			res[_k] = v
 		return res
+
+	def add_host(self, ip, mac):
+		"""Create a host object with given ip address and and mac address.
+
+		@type ip: str
+		@type mac: str
+		@raises ValueError:
+		@raises OmapiError:
+		@raises socket.error:
+		"""
+		msg = OmapiMessage.open(b"host")
+		msg.message.append((b"create", struct.pack("!I", 1)))
+		msg.message.append((b"exclusive", struct.pack("!I", 1)))
+		msg.obj.append((b"hardware-address", pack_mac(mac)))
+		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
+		msg.obj.append((b"ip-address", pack_ip(ip)))
+		response = self.query_server(msg)
+		if response.opcode != OMAPI_OP_UPDATE:
+			raise OmapiError("add failed")
 
 	def add_host_supersede_name(self, ip, mac, name):  # pylint:disable=E0213
 		"""Add a host with a fixed-address and override its hostname with the given name.
