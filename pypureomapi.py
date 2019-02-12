@@ -111,7 +111,7 @@ __all__.append("OmapiErrorAttributeNotFound")
 class OmapiErrorAttributeNotFound(OmapiErrorNotFound):
 	"""Not found."""
 	def __init__(self):
-		OmapiErrorNotFound.__init__(self, "not attribute not found")
+		OmapiError.__init__(self, "attribute not found")
 
 
 class OutBuffer(object):
