@@ -1,4 +1,4 @@
-pypureomapi (0.8) unstable; urgency=low
+pypureomapi (0.8) UNRELEASED; urgency=low
 
   * Implement more generic lookup functions
   * move group examples to source
