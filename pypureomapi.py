@@ -109,9 +109,9 @@ __all__.append("OmapiErrorAttributeNotFound")
 
 
 class OmapiErrorAttributeNotFound(OmapiErrorNotFound):
-	"""Not found."""
-	def __init__(self):
-		OmapiError.__init__(self, "attribute not found")
+	"""Attribute not found."""
+	def __init__(self):  # pylint:disable=super-init-not-called
+		OmapiError.__init__(self, "attribute not found")  # pylint:disable=non-parent-init-called
 
 
 class OutBuffer(object):
