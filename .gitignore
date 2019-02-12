@@ -1,5 +1,5 @@
 .idea
 *.pyc
-atlassian-ide-plugin.xml
 __pycache__
 build
+test_live_omapi.py
