@@ -43,7 +43,25 @@ dd if=/dev/urandom bs=16 count=1 2>/dev/null | openssl enc -e -base64
 
 This is a short example, of how to use basic lookup functions **lookup_mac** and **lookup_ip** to quickly query a DHCP lease on a ISC DHCP Server.
 
+Python 3 example:
+```
+import pypureomapi
 
+KEYNAME=b"defomapi"
+BASE64_ENCODED_KEY=b"+bFQtBCta6j2vWkjPkNFtgA=="  # FIXME: be sure to replace this by your own key!!!
+
+dhcp_server_ip="127.0.0.1"
+port = 7911 # Port of the omapi service
+
+omapi = pypureomapi.Omapi(dhcp_server_ip, port, KEYNAME, BASE64_ENCODED_KEY)
+mac = omapi.lookup_mac("192.168.0.250")
+print("%s is currently assigned to mac %s" % (lease_ip, mac))
+
+ip = omapi.lookup_ip(mac)
+print("%s mac currently has ip %s assigned" % (mac, ip))
+```
+
+Python 2 example:
 ```
 from __future__ import print_function
 import pypureomapi
@@ -61,6 +79,7 @@ print("%s is currently assigned to mac %s" % (lease_ip, mac))
 ip = omapi.lookup_ip(mac)
 print("%s mac currently has ip %s assigned" % (mac, ip))
 ```
+
 
 If you need full lease information, you can also query the full lease directly by using **lookup_by_lease**, which gives you the full lease details as output:
 
