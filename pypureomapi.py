@@ -350,7 +350,11 @@ class OmapiHMACMD5Authenticator(OmapiAuthenticatorBase):
 		@raises binascii.Error: for bad base64 encoding
 		"""
 		OmapiAuthenticatorBase.__init__(self)
+		if user is not None:
+			assert isinstance(user, bytes)
 		self.user = user
+		if key is not None:
+			assert isinstance(key, bytes)
 		self.key = binascii.a2b_base64(key)
 
 	def auth_object(self):
