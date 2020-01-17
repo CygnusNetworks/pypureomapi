@@ -139,16 +139,16 @@ b'ip-address': b'\xc0\xa8\n\xa7'
 
 The following lookup functions are implemented, allowing directly querying the different types:
 
-* lookup_ip_host(mac) - lookups up a host object (static defined host) by mac
-* lookup_ip(mac) - lookups a lease object by mac and returns the ip
-* lookup_host(name) - lookups a host object by name and returns the ip, mac and hostname
-* lookup_host_host(mac) - lookups a host object by mac and returns the ip, mac and name
-* lookup_hostname(ip) - lookups a lease object by ip and returns the client-hostname
+  * lookup_ip_host(mac) - lookups up a host object (static defined host) by mac
+  * lookup_ip(mac) - lookups a lease object by mac and returns the ip
+  * lookup_host(name) - lookups a host object by name and returns the ip, mac and hostname
+  * lookup_host_host(mac) - lookups a host object by mac and returns the ip, mac and name
+  * lookup_hostname(ip) - lookups a lease object by ip and returns the client-hostname
   
 These special functions use:
 
-* lookup_by_host - generic lookup function for host objects 
-* lookup_by_lease - generic lookup function for lease objects
+  * lookup_by_host - generic lookup function for host objects 
+  * lookup_by_lease - generic lookup function for lease objects
   
 which provide full access to complete lease data. 
 
@@ -156,12 +156,12 @@ which provide full access to complete lease data.
 
 For adding and deleting host objects (static DHCP leases), there are multiple functions:
 
-* add_host(ip, mac)
-* add_host_supersede_name(ip, mac, name)
-* add_host_without_ip(mac)
-* add_host_supersede(ip, mac, name, hostname=None, router=None, domain=None)
-* add_group(groupname, statements)
-* add_host_with_group(ip, mac, groupname))
+  * add_host(ip, mac)
+  * add_host_supersede_name(ip, mac, name)
+  * add_host_without_ip(mac)
+  * add_host_supersede(ip, mac, name, hostname=None, router=None, domain=None)
+  * add_group(groupname, statements)
+  * add_host_with_group(ip, mac, groupname))
 
 See http://jpmens.net/2011/07/20/dynamically-add-static-leases-to-dhcpd/ for original idea (which is now merged) and detailed explanation.
 
