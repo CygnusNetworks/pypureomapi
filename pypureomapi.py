@@ -350,7 +350,9 @@ class OmapiHMACMD5Authenticator(OmapiAuthenticatorBase):
 		@raises binascii.Error: for bad base64 encoding
 		"""
 		OmapiAuthenticatorBase.__init__(self)
+		assert isinstance(user, bytes)
 		self.user = user
+		assert isinstance(key, bytes)
 		self.key = binascii.a2b_base64(key)
 
 	def auth_object(self):
@@ -574,7 +576,7 @@ def parse_chain(*args):
 	"""
 	items = []
 	for parser in args:
-		for element in parser(*items):  # pylint:disable=star-args
+		for element in parser(*items):
 			if element is None:
 				yield None
 			else:
@@ -661,7 +663,7 @@ class InBuffer(object):
 		True
 		"""
 		entries = []
-		try:
+		try:  # pylint:disable=too-many-nested-blocks
 			while True:
 				for key in self.parse_net16string():
 					if key is None:
@@ -687,7 +689,7 @@ class InBuffer(object):
 		>>> d = b"\\0\\0\\0\\x64\\0\\0\\0\\x18"
 		>>> next(InBuffer(d).parse_startup_message()).validate()
 		"""
-		return parse_map(lambda args: OmapiStartupMessage(*args), parse_chain(self.parse_net32int, lambda _: self.parse_net32int()))  # pylint:disable=star-args
+		return parse_map(lambda args: OmapiStartupMessage(*args), parse_chain(self.parse_net32int, lambda _: self.parse_net32int()))
 
 	def parse_message(self):
 		"""results in an OmapiMessage"""
@@ -701,7 +703,7 @@ class InBuffer(object):
 							lambda *_: self.parse_bindict(),  # object
 							lambda *args: self.parse_fixedbuffer(args[1]))  # signature
 		return parse_map(lambda args:  # skip authlen in args:
-				OmapiMessage(*(args[0:1] + args[2:])), parser)  # pylint:disable=star-args
+				OmapiMessage(*(args[0:1] + args[2:])), parser)
 
 
 if isinstance(bytes(b"x")[0], int):
