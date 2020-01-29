@@ -1,16 +1,11 @@
-pypureomapi (0.8-1) UNRELEASED; urgency=low
+pypureomapi (0.8-1) unstable; urgency=medium
 
-  * New upstream release; Closes: #950061
-  * Implement more generic lookup functions
-  * move group examples to source
-  * improve documentation
-  * add new method add_host_supersede
-  * add optional timeout parameter
-  * add Python 3.6 compatibility
-  * add lookup_hostname and add_host_without_ip
-  * add pylint exceptions and Debian dh-python dependency
+  * New upstream release
+  * Add dh-python to build-dependency; Closes: #950061
+  * Use updated description from upstream
+  * Update Debian policy
 
- -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Wed, 29 Jan 2020 09:19:06 +0100
+ -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Wed, 29 Jan 2020 09:58:32 +0100
 
 pypureomapi (0.4-1.1) unstable; urgency=medium
 
