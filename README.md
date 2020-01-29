@@ -1,3 +1,4 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/eeca983d807b472fa8539506de47ffa6)](https://app.codacy.com/gh/CygnusNetworks/pypureomapi?utm_source=github.com&utm_medium=referral&utm_content=CygnusNetworks/pypureomapi&utm_campaign=Badge_Grade_Dashboard)
 [![Build Status](https://travis-ci.org/CygnusNetworks/pypureomapi.svg?branch=master)](https://travis-ci.org/CygnusNetworks/pypureomapi) 
 [![Latest Version](https://img.shields.io/pypi/v/pypureomapi.svg)](https://pypi.python.org/pypi/pypureomapi)
 [![PyPi Status](https://img.shields.io/pypi/status/pypureomapi.svg)](https://pypi.python.org/pypi/pypureomapi) [![PyPi Versions](https://img.shields.io/pypi/pyversions/pypureomapi.svg)](https://pypi.python.org/pypi/pypureomapi)
@@ -24,7 +25,7 @@ omapi-key defomapi;
 omapi-port 7911;
 ```
 
-**Replace the given secret by a key created on your own!**
+Replace the given secret by a key created on your own!
 
 To generate a key use the following command:
 
@@ -79,7 +80,6 @@ print("%s is currently assigned to mac %s" % (lease_ip, mac))
 ip = omapi.lookup_ip(mac)
 print("%s mac currently has ip %s assigned" % (mac, ip))
 ```
-
 
 If you need full lease information, you can also query the full lease directly by using **lookup_by_lease**, which gives you the full lease details as output:
 
