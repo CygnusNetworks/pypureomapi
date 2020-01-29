@@ -1,32 +1,25 @@
-pypureomapi (0.8) UNRELEASED; urgency=low
+pypureomapi (0.8-1) UNRELEASED; urgency=low
 
+  * New upstream release; Closes: #950061
   * Implement more generic lookup functions
   * move group examples to source
   * improve documentation
-
- -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Mon, 11 Feb 2019 13:29:22 +0100
-
-pypureomapi (0.7) unstable; urgency=low
-
   * add new method add_host_supersede
-
- -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Fri, 21 Sep 2018 15:14:59 +0200
-
-pypureomapi (0.6) unstable; urgency=low
-
   * add optional timeout parameter
   * add Python 3.6 compatibility
-
- -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Thu, 30 Mar 2017 13:53:19 +0200
-
-pypureomapi (0.5) unstable; urgency=low
-
   * add lookup_hostname and add_host_without_ip
   * add pylint exceptions and Debian dh-python dependency
 
- -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Mon, 21 Nov 2016 15:53:04 +0100
+ -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Wed, 29 Jan 2020 09:19:06 +0100
 
-pypureomapi (0.4) unstable; urgency=low
+pypureomapi (0.4-1.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Drop python2 support; Closes: #937509
+
+ -- Sandro Tosi <morph@debian.org>  Fri, 04 Oct 2019 22:02:53 -0400
+
+pypureomapi (0.4-1) unstable; urgency=low
 
   [ Dr. Torge Szczepanek ]
   * Switch License to Apache 2.0
