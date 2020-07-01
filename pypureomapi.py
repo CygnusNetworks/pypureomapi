@@ -1214,7 +1214,7 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 			elif _k == "name":
 				msg.obj.append((b"name", kwargs[k].encode('utf-8')))
 			else:
-				msg.obj.append((str(k).encode(), kwargs[k].encode('utf-8')))
+				msg.obj.append((str(_k).encode(), kwargs[k].encode('utf-8')))
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiErrorNotFound()
