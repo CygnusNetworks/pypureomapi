@@ -1,4 +1,4 @@
-pypureomapi (0.8-1) unstable; urgency=medium
+pypureomapi (0.8) UNRELEASED; urgency=medium
 
   * New upstream release
   * Add dh-python to build-dependency; Closes: #950061
