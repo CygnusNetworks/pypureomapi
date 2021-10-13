@@ -85,7 +85,7 @@ If you need full lease information, you can also query the full lease directly b
 
 ```
 lease = omapi.lookup_by_lease(mac="24:79:2a:0a:13:c0")
-for k, v in res.items():
+for k, v in lease.items():
 	print("%s: %s" % (k, v))
 ```
 
