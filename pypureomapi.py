@@ -1311,7 +1311,7 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 
 		msg = OmapiMessage.open(b"host")
 		msg.message.append((b"create", struct.pack("!I", 1)))
-		msg.obj.append((b"name", name))
+		msg.obj.append((b"name", name.encode('utf-8')))
 		msg.obj.append((b"hardware-address", pack_mac(mac)))
 		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
 		msg.obj.append((b"ip-address", pack_ip(ip)))
