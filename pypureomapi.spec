@@ -23,12 +23,9 @@ Source0:        python-%{srcname}-%{version}.tar.gz
 
 BuildArch:      noarch
 
-%description
-%{sum}
 
 %if 0%{?with_python2}
-BuildRequires:  python2-devel
-BuildRequires:  python-setuptools
+BuildRequires:  python-setuptools python2-devel
 
 %if 0%{?with_check}
 BuildRequires:  pytest
@@ -39,11 +36,13 @@ BuildRequires:  pytest
 
 
 %if 0%{?with_python3}
-BuildRequires:  python3-devel
-BuildRequires:  python3-setuptools
+BuildRequires:  python3-setuptools python3-devel
 %if 0%{?with_check}
 BuildRequires:  python3-pytest
 %endif # with_check
+
+%description
+%{sum}
 
 %package -n python3-%{srcname}
 Summary:        %{sum}
