@@ -50,8 +50,10 @@ Requires:       python3-setuptools
 %description
 %{sum}
 
+%if 0%{?with_python3}
 %description -n python3-%{srcname}
 %{sum}
+%endif
 
 %prep
 %setup -q -n python-%{srcname}-%{version}
