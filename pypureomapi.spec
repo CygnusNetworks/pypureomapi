@@ -41,16 +41,17 @@ BuildRequires:  python3-setuptools python3-devel
 BuildRequires:  python3-pytest
 %endif # with_check
 
-%description
-%{sum}
-
 %package -n python3-%{srcname}
 Summary:        %{sum}
 Requires:       python3-setuptools
 
+%endif # with_python3
+
+%description
+%{sum}
+
 %description -n python3-%{srcname}
 %{sum}
-%endif # with_python3
 
 %prep
 %setup -q -n python-%{srcname}-%{version}
