@@ -1143,7 +1143,7 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 			return dict(ip=res["ip-address"], mac=res["hardware-address"], hostname=res["name"].decode('utf-8'))
 		except KeyError:
 			raise OmapiErrorAttributeNotFound()
-                        
+
 	def lookup_host_by_ip(self, ip):
 		"""Look for a host object with given ip address and return the
 		name, mac, and ip address
@@ -1161,7 +1161,7 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 			return dict(ip=res["ip-address"], mac=res["hardware-address"], hostname=res["name"].decode('utf-8'))
 		except KeyError:
 			raise OmapiErrorAttributeNotFound()
-                        
+
 	def lookup_host_host(self, mac):
 		"""Look for a host object with given mac address and return the
 		name, mac, and ip address
