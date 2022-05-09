@@ -1238,7 +1238,7 @@ class Omapi(object):  # pylint:disable=too-many-public-methods,useless-object-in
 		@raises socket.error:
 		"""
 		ltype_utf = ltype.encode("utf-8")
-		assert ltype_utf in [b"host", b"lease"]
+		assert ltype_utf in [b"host", b"lease", b"failover-state"]
 		msg = OmapiMessage.open(ltype_utf)
 		for k in kwargs:  # pylint:disable=consider-using-dict-items
 			if k == "raw":
