@@ -114,7 +114,7 @@ class OmapiErrorAttributeNotFound(OmapiErrorNotFound):
 		OmapiError.__init__(self, "attribute not found")  # pylint:disable=non-parent-init-called
 
 
-class OutBuffer(object):
+class OutBuffer(object):  # pylint:disable=useless-object-inheritance
 	"""Helper class for constructing network packets."""
 	sizelimit = 65536
 
@@ -233,7 +233,7 @@ class OutBuffer(object):
 		return self
 
 
-class OmapiStartupMessage(object):
+class OmapiStartupMessage(object):  # pylint:disable=useless-object-inheritance
 	"""Class describing the protocol negotiation messages.
 
 	>>> s = OmapiStartupMessage().as_string()
@@ -292,7 +292,7 @@ class OmapiStartupMessage(object):
 		return "protocol_version=%d header_size=%d" % (self.protocol_version, self.header_size)
 
 
-class OmapiAuthenticatorBase(object):
+class OmapiAuthenticatorBase(object):  # pylint:disable=useless-object-inheritance
 	"""Base class for OMAPI authenticators.
 	@cvar authlen: is the length of a signature as returned by the sign method
 	@type authlen: int
@@ -374,7 +374,7 @@ class OmapiHMACMD5Authenticator(OmapiAuthenticatorBase):
 __all__.append("OmapiMessage")
 
 
-class OmapiMessage(object):  # pylint:disable=too-many-instance-attributes
+class OmapiMessage(object):  # pylint:disable=too-many-instance-attributes,useless-object-inheritance
 	"""
 	@type authid: int
 	@ivar authid: The id of the message authenticator.
@@ -585,7 +585,7 @@ def parse_chain(*args):
 	yield tuple(items)
 
 
-class InBuffer(object):
+class InBuffer(object):  # pylint:disable=useless-object-inheritance
 	sizelimit = 65536
 
 	def __init__(self, initial=b""):
@@ -823,7 +823,7 @@ def unpack_mac(sixbytes):
 	return ":".join(["%2.2x".__mod__(x) for x in bytes_to_int_seq(sixbytes)])
 
 
-class LazyStr(object):  # pylint:disable=too-few-public-methods
+class LazyStr(object):  # pylint:disable=too-few-public-methods,useless-object-inheritance
 	def __init__(self, fnc):
 		self.function = fnc
 
@@ -831,7 +831,7 @@ class LazyStr(object):  # pylint:disable=too-few-public-methods
 		return self.function()
 
 
-class TCPClientTransport(object):
+class TCPClientTransport(object):  # pylint:disable=useless-object-inheritance
 	"""PEP 3156 dummy transport class to support OmapiProtocol class."""
 	def __init__(self, protocol, host, port, timeout=None):
 		self.protocol = protocol
@@ -880,7 +880,7 @@ class TCPClientTransport(object):
 			raise
 
 
-class OmapiProtocol(object):
+class OmapiProtocol(object):  # pylint:disable=useless-object-inheritance
 	"""PEP 3156 like protocol class for Omapi.
 
 	This interface is not yet to be relied upon.
@@ -951,7 +951,7 @@ class OmapiProtocol(object):
 __all__.append("Omapi")
 
 
-class Omapi(object):  # pylint:disable=too-many-public-methods
+class Omapi(object):  # pylint:disable=too-many-public-methods,useless-object-inheritance
 	def __init__(self, hostname, port, username=None, key=None, timeout=None):  # pylint:disable=too-many-arguments
 		"""
 		@type hostname: str
@@ -1088,7 +1088,7 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		try:
 			return res["ip-address"]
 		except KeyError:
-			raise OmapiErrorAttributeNotFound()
+			raise OmapiErrorAttributeNotFound()  # pylint:disable=raise-missing-from
 
 	def lookup_ip(self, mac):
 		"""Look for a lease object with given mac address and return the
@@ -1106,7 +1106,7 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		try:
 			return res["ip-address"]
 		except KeyError:
-			raise OmapiErrorAttributeNotFound()
+			raise OmapiErrorAttributeNotFound()  # pylint:disable=raise-missing-from
 
 	def lookup_mac(self, ip):
 		"""Look up a lease object with given ip address and return the
@@ -1124,7 +1124,7 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		try:
 			return res["hardware-address"]
 		except KeyError:
-			raise OmapiErrorAttributeNotFound()
+			raise OmapiErrorAttributeNotFound()  # pylint:disable=raise-missing-from
 
 	def lookup_host(self, name):
 		"""Look for a host object with given name and return the
@@ -1142,7 +1142,7 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		try:
 			return dict(ip=res["ip-address"], mac=res["hardware-address"], hostname=res["name"].decode('utf-8'))
 		except KeyError:
-			raise OmapiErrorAttributeNotFound()
+			raise OmapiErrorAttributeNotFound()  # pylint:disable=raise-missing-from
 
 	def lookup_host_by_ip(self, ip):
 		"""Look for a host object with given ip address and return the
@@ -1160,7 +1160,7 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		try:
 			return dict(ip=res["ip-address"], mac=res["hardware-address"], hostname=res["name"].decode('utf-8'))
 		except KeyError:
-			raise OmapiErrorAttributeNotFound()
+			raise OmapiErrorAttributeNotFound()  # pylint:disable=raise-missing-from
 
 	def lookup_host_host(self, mac):
 		"""Look for a host object with given mac address and return the
@@ -1178,7 +1178,7 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		try:
 			return dict(ip=res["ip-address"], mac=res["hardware-address"], name=res["name"].decode('utf-8'))
 		except KeyError:
-			raise OmapiErrorAttributeNotFound()
+			raise OmapiErrorAttributeNotFound()  # pylint:disable=raise-missing-from
 
 	def lookup_hostname(self, ip):
 		"""Look up a lease object with given ip address and return the associated client hostname.
@@ -1240,7 +1240,7 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		ltype_utf = ltype.encode("utf-8")
 		assert ltype_utf in [b"host", b"lease", b"failover-state"]
 		msg = OmapiMessage.open(ltype_utf)
-		for k in kwargs:
+		for k in kwargs:  # pylint:disable=consider-using-dict-items
 			if k == "raw":
 				continue
 			_k = k.replace("_", "-")
@@ -1258,7 +1258,7 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 			raise OmapiErrorNotFound()
 		if "raw" in kwargs and kwargs["raw"]:
 			return dict(response.obj)
-		res = dict()
+		res = {}
 		for k, v in dict(response.obj).items():
 			_k = k.decode('utf-8')
 			try:
