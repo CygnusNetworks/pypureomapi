@@ -1202,6 +1202,26 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 	def lookup_by_lease(self, **kwargs):
 		return self.__lookup("lease", **kwargs)
 
+	def lookup_failoverstate(self, name, attribute):
+		"""Look up a failover-state object with given peer name and return the associated attribute.
+
+		@type name: str
+		@type attribute: str
+		@rtype: str or None
+		@raises ValueError:
+		@raises OmapiError:
+		@raises OmapiErrorNotFound: if no failover-state object with the given name could be found
+		@raises OmapiErrorAttributeNotFound: if failover-state object could be found, but object lacks the attribute
+		@raises socket.error:
+		"""
+		res = self.lookup_by_failoverstate(name=name)
+		if attribute not in res:
+			raise OmapiErrorAttributeNotFound()
+		return res[attribute]
+
+	def lookup_by_failoverstate(self, **kwargs):
+		return self.__lookup("failover-state", **kwargs)
+
 	def __lookup(self, ltype, **kwargs):
 		"""Generic Lookup function
 
