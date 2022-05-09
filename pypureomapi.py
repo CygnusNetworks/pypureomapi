@@ -1240,7 +1240,7 @@ class Omapi(object):  # pylint:disable=too-many-public-methods,useless-object-in
 		ltype_utf = ltype.encode("utf-8")
 		assert ltype_utf in [b"host", b"lease"]
 		msg = OmapiMessage.open(ltype_utf)
-		for k in kwargs:
+		for k in kwargs:  # pylint:disable=consider-using-dict-items
 			if k == "raw":
 				continue
 			_k = k.replace("_", "-")
@@ -1258,7 +1258,7 @@ class Omapi(object):  # pylint:disable=too-many-public-methods,useless-object-in
 			raise OmapiErrorNotFound()
 		if "raw" in kwargs and kwargs["raw"]:
 			return dict(response.obj)
-		res = dict()
+		res = {}
 		for k, v in dict(response.obj).items():
 			_k = k.decode('utf-8')
 			try:
