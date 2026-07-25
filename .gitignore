@@ -5,3 +5,7 @@ build
 test_live_omapi.py
 MANIFEST
 dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
