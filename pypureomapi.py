@@ -696,6 +696,47 @@ def unpack_mac(sixbytes: bytes) -> str:
 	return ":".join(f"{x:02x}" for x in sixbytes)
 
 
+__all__.append("encode_classless_static_routes")
+
+
+def encode_classless_static_routes(routes):
+	"""Encode classless static routes (RFC 3442 / Microsoft option 249) into the
+	colon-hex byte string expected in an ISC DHCP ``supersede`` statement.
+
+	Each route is a ``(destination_cidr, gateway)`` pair. The wire format per
+	route is: one width byte (the prefix length), the significant octets of the
+	destination network (``ceil(width / 8)`` of them), then the four gateway
+	octets. The result can be dropped straight into a statement such as
+	``supersede classless-static-routes = <value>;`` (or the Microsoft variant
+	``ms-classless-static-routes``, option code 249).
+
+	>>> encode_classless_static_routes([("10.0.0.0/8", "192.168.1.1")])
+	'08:0a:c0:a8:01:01'
+	>>> encode_classless_static_routes([("0.0.0.0/0", "192.168.1.1")])
+	'00:c0:a8:01:01'
+	>>> encode_classless_static_routes([("16.11.0.0/16", "10.10.10.1")])
+	'10:10:0b:0a:0a:0a:01'
+
+	@type routes: [(str, str)]
+	@param routes: list of (destination in CIDR notation, gateway) pairs
+	@rtype: str
+	@raises ValueError: for badly formatted routes
+	"""
+	out = bytearray()
+	for dest, gateway in routes:
+		network, sep, prefix = dest.partition("/")
+		if not sep:
+			raise ValueError("destination must be in CIDR notation, e.g. 10.0.0.0/8")
+		width = int(prefix)  # raises ValueError
+		if not 0 <= width <= 32:
+			raise ValueError("prefix length must be between 0 and 32")
+		significant = (width + 7) // 8
+		out.append(width)
+		out.extend(pack_ip(network)[:significant])  # raises ValueError
+		out.extend(pack_ip(gateway))  # raises ValueError
+	return ":".join(f"{b:02x}" for b in out)
+
+
 class LazyStr:  # pylint:disable=too-few-public-methods
 	def __init__(self, fnc: "Callable[[], str]") -> None:
 		self.function = fnc
@@ -1161,10 +1202,13 @@ class Omapi:  # pylint:disable=too-many-public-methods
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError("add failed")
 
-	def add_host_supersede(self, ip: str, mac: str, name: str, hostname: "str | None" = None, router: "str | None" = None, domain: "str | None" = None) -> None:  # pylint:disable=too-many-arguments
+	def add_host_supersede(self, ip: str, mac: str, name: str, hostname: "str | None" = None, router: "str | None" = None, domain: "str | None" = None, statements: "str | None" = None) -> None:  # pylint:disable=too-many-arguments
 		"""Create a host object with given ip, mac, name, hostname, router and
 		domain. hostname, router and domain are optional arguments.
 
+		@param statements: additional raw ISC DHCP statements appended verbatim,
+				e.g. a ``supersede classless-static-routes = ...;`` produced by
+				L{encode_classless_static_routes}.
 		@raises OmapiError:
 		@raises socket.error:
 		"""
@@ -1182,6 +1226,8 @@ class Omapi:  # pylint:disable=too-many-public-methods
 			stmts.append(f'supersede routers {router};\n ')
 		if domain:
 			stmts.append(f'supersede domain-name "{domain}";')
+		if statements:
+			stmts.append(statements)
 		if stmts:
 			encoded_stmts = "".join(stmts).encode("utf-8")
 			msg.obj.append((b"statements", encoded_stmts))
@@ -1246,6 +1292,37 @@ class Omapi:  # pylint:disable=too-many-public-methods
 		r2 = self.query_server(m2)
 		if r2.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError(f"changing group of host {name} to {group} failed")
+
+	def signal_shutdown(self) -> None:
+		"""Gracefully shut down the DHCP server via the OMAPI control object.
+
+		This opens the server's singleton ``control`` object and sets its state
+		to 2 (shutdown), equivalent to the omshell sequence
+		``new control; open; set state = 2; update``.
+
+		ISC dhcpd does not answer the state update — it just shuts down — so the
+		server dropping the connection or the read timing out is treated as
+		success. For that reason the connection should be created with a
+		C{timeout} (otherwise the final read blocks indefinitely).
+
+		@raises OmapiError:
+		@raises socket.error:
+		"""
+		response = self.query_server(OmapiMessage.open(b"control"))
+		if response.opcode != OMAPI_OP_UPDATE:
+			raise OmapiError("opening control object failed")
+		if response.handle == 0:
+			raise OmapiError("received invalid handle from server")
+		msg = OmapiMessage.update(response.handle)
+		msg.update_object({b"state": struct.pack("!I", 2)})
+		try:
+			response = self.query_server(msg)
+		except (OmapiError, OSError):
+			# The server shut down without answering (dropped connection or
+			# read timeout); that is the expected, successful outcome.
+			return
+		if response.opcode != OMAPI_OP_UPDATE:
+			raise OmapiError("setting control state to shutdown failed")
 
 
 if __name__ == "__main__":

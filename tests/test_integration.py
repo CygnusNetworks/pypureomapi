@@ -82,6 +82,27 @@ def test_add_host_without_ip(omapi):
 	assert res["hardware-address"] == TEST_MAC
 
 
+def test_add_host_supersede_with_static_routes(omapi):
+	# Requires the server to define: option ms-classless-static-routes code 249
+	# = array of integer 8; (the CI job and the container harness both do).
+	routes = pypureomapi.encode_classless_static_routes([("10.0.0.0/8", "192.0.2.1")])
+	omapi.add_host_supersede(
+		TEST_IP, TEST_MAC, "route-host",
+		statements=f"supersede ms-classless-static-routes = {routes};",
+	)
+	assert omapi.lookup_host_host(TEST_MAC)["ip"] == TEST_IP
+
+
 def test_delete_missing_host_raises(omapi):
 	with pytest.raises(pypureomapi.OmapiErrorNotFound):
 		omapi.del_host("00:16:3e:00:00:99")
+
+
+# NOTE: keep this LAST — it shuts the test server down, so any test defined
+# after it would fail to connect.
+def test_signal_shutdown_stops_dhcpd(omapi):
+	omapi.signal_shutdown()
+	# The server must now be gone: a fresh connection should fail.
+	with pytest.raises((pypureomapi.OmapiError, OSError)):
+		pypureomapi.Omapi(HOST, PORT, KEYNAME.encode() if KEYNAME else None,
+				KEY.encode() if KEY else None, timeout=5)

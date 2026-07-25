@@ -363,6 +363,87 @@ def test_creation_failure_variants(call):
 		omapi.close()
 
 
+def test_add_host_supersede_with_extra_statements():
+	sent = []
+
+	def responder(request):
+		sent.append(request)
+		return OmapiMessage(opcode=OMAPI_OP_UPDATE)
+
+	routes = pypureomapi.encode_classless_static_routes([("10.0.0.0/8", "192.168.1.1")])
+	with FakeOmapiServer(responder) as srv:
+		omapi = connect(srv.port)
+		omapi.add_host_supersede("192.168.0.7", "00:11:22:33:44:57", "h7",
+				statements=f"supersede classless-static-routes = {routes};")
+		omapi.close()
+	stmts = dict(sent[-1].obj)[b"statements"]
+	assert b"classless-static-routes = 08:0a:c0:a8:01:01;" in stmts
+
+
+# --- graceful shutdown (issue #8) -------------------------------------------
+
+def test_signal_shutdown_sets_control_state():
+	sent = []
+
+	def responder(request):
+		sent.append(request)
+		return OmapiMessage(opcode=OMAPI_OP_UPDATE, handle=55)
+
+	with FakeOmapiServer(responder) as srv:
+		omapi = connect(srv.port)
+		omapi.signal_shutdown()
+		omapi.close()
+	# first request opens the control object, second sets state = 2
+	assert dict(sent[0].message)[b"type"] == b"control"
+	assert dict(sent[-1].obj)[b"state"] == struct.pack("!I", 2)
+
+
+def test_signal_shutdown_open_fails():
+	with FakeOmapiServer(const(OmapiMessage(opcode=OMAPI_OP_STATUS))) as srv:
+		omapi = connect(srv.port)
+		with pytest.raises(OmapiError):
+			omapi.signal_shutdown()
+		omapi.close()
+
+
+def test_signal_shutdown_invalid_handle():
+	with FakeOmapiServer(const(OmapiMessage(opcode=OMAPI_OP_UPDATE, handle=0))) as srv:
+		omapi = connect(srv.port)
+		with pytest.raises(OmapiError):
+			omapi.signal_shutdown()
+		omapi.close()
+
+
+def test_signal_shutdown_state_update_rejected():
+	state = {"n": 0}
+
+	def responder(request):
+		state["n"] += 1
+		if state["n"] == 1:
+			return OmapiMessage(opcode=OMAPI_OP_UPDATE, handle=55)
+		return OmapiMessage(opcode=OMAPI_OP_STATUS)  # state update rejected
+
+	with FakeOmapiServer(responder) as srv:
+		omapi = connect(srv.port)
+		with pytest.raises(OmapiError):
+			omapi.signal_shutdown()
+		omapi.close()
+
+
+def test_signal_shutdown_connection_drop_is_success():
+	state = {"n": 0}
+
+	def responder(request):
+		state["n"] += 1
+		if state["n"] == 1:
+			return OmapiMessage(opcode=OMAPI_OP_UPDATE, handle=55)
+		return None  # server hangs up as it shuts down
+
+	with FakeOmapiServer(responder) as srv:
+		omapi = connect(srv.port)
+		omapi.signal_shutdown()  # must not raise
+
+
 def test_add_group_and_with_group_failures():
 	with FakeOmapiServer(const(OmapiMessage(opcode=OMAPI_OP_STATUS))) as srv:
 		omapi = connect(srv.port)

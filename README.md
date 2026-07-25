@@ -1,7 +1,10 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/eeca983d807b472fa8539506de47ffa6)](https://app.codacy.com/gh/CygnusNetworks/pypureomapi?utm_source=github.com&utm_medium=referral&utm_content=CygnusNetworks/pypureomapi&utm_campaign=Badge_Grade_Dashboard)
 [![CI](https://github.com/CygnusNetworks/pypureomapi/actions/workflows/ci.yml/badge.svg)](https://github.com/CygnusNetworks/pypureomapi/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/CygnusNetworks/pypureomapi/branch/master/graph/badge.svg)](https://codecov.io/gh/CygnusNetworks/pypureomapi)
 [![Latest Version](https://img.shields.io/pypi/v/pypureomapi.svg)](https://pypi.python.org/pypi/pypureomapi)
 [![PyPi Status](https://img.shields.io/pypi/status/pypureomapi.svg)](https://pypi.python.org/pypi/pypureomapi) [![PyPi Versions](https://img.shields.io/pypi/pyversions/pypureomapi.svg)](https://pypi.python.org/pypi/pypureomapi)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE.md)
 
 pypureomapi
 ===========
@@ -162,11 +165,47 @@ For adding and deleting host objects (static DHCP leases), there are multiple fu
   * add_host(ip, mac)
   * add_host_supersede_name(ip, mac, name)
   * add_host_without_ip(mac)
-  * add_host_supersede(ip, mac, name, hostname=None, router=None, domain=None)
+  * add_host_supersede(ip, mac, name, hostname=None, router=None, domain=None, statements=None)
   * add_group(groupname, statements)
   * add_host_with_group(ip, mac, groupname))
 
 See http://jpmens.net/2011/07/20/dynamically-add-static-leases-to-dhcpd/ for original idea (which is now merged) and detailed explanation.
+
+### Classless static routes
+
+`add_host_supersede` accepts an optional `statements` argument with additional raw
+ISC DHCP statements. Together with the helper `encode_classless_static_routes`
+you can push classless static routes (RFC 3442, or the Microsoft option 249
+`ms-classless-static-routes`). The helper turns `(destination_cidr, gateway)`
+pairs into the colon-hex byte string dhcpd expects:
+
+```python
+routes = pypureomapi.encode_classless_static_routes([
+    ("10.0.0.0/8", "192.168.1.1"),
+    ("0.0.0.0/0", "192.168.1.254"),
+])
+# routes == "08:0a:c0:a8:01:01:00:c0:a8:01:fe"
+
+omapi.add_host_supersede(
+    "192.168.1.50", "00:11:22:33:44:55", "myhost",
+    statements=f"supersede ms-classless-static-routes = {routes};",
+)
+```
+
+The relevant option must be defined in your `dhcpd.conf`, e.g.
+`option ms-classless-static-routes code 249 = array of integer 8;`.
+
+## Shutting down the server
+
+`signal_shutdown()` gracefully stops the DHCP server via the OMAPI `control`
+object (equivalent to `omshell`'s `new control; open; set state = 2; update`).
+Create the connection with a `timeout`, since dhcpd shuts down without sending a
+final response:
+
+```python
+omapi = pypureomapi.Omapi(dhcp_server_ip, port, KEYNAME, BASE64_ENCODED_KEY, timeout=10)
+omapi.signal_shutdown()
+```
 
 # Custom Integration
 

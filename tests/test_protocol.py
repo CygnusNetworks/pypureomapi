@@ -23,6 +23,7 @@ from pypureomapi import (
 	unpack_ip,
 	pack_mac,
 	unpack_mac,
+	encode_classless_static_routes,
 	OMAPI_OP_OPEN,
 	OMAPI_OP_UPDATE,
 	OMAPI_OP_DELETE,
@@ -204,6 +205,29 @@ def test_pack_unpack_mac_roundtrip_and_errors():
 		unpack_mac("notbytes")
 	with pytest.raises(ValueError):
 		unpack_mac(b"short")
+
+
+# --- classless static routes (issue #31) ------------------------------------
+
+def test_encode_classless_static_routes_vectors():
+	assert encode_classless_static_routes([("10.0.0.0/8", "192.168.1.1")]) == "08:0a:c0:a8:01:01"
+	assert encode_classless_static_routes([("0.0.0.0/0", "10.0.0.1")]) == "00:0a:00:00:01"
+	assert encode_classless_static_routes([("192.168.1.0/24", "10.0.0.1")]) == "18:c0:a8:01:0a:00:00:01"
+
+
+def test_encode_classless_static_routes_multiple_concatenate():
+	value = encode_classless_static_routes([
+		("10.0.0.0/8", "192.168.1.1"),
+		("0.0.0.0/0", "10.0.0.1"),
+	])
+	assert value == "08:0a:c0:a8:01:01:00:0a:00:00:01"
+
+
+def test_encode_classless_static_routes_errors():
+	with pytest.raises(ValueError):
+		encode_classless_static_routes([("10.0.0.0", "1.2.3.4")])  # missing /prefix
+	with pytest.raises(ValueError):
+		encode_classless_static_routes([("10.0.0.0/33", "1.2.3.4")])  # prefix out of range
 
 
 # --- OmapiProtocol byte pump ------------------------------------------------
