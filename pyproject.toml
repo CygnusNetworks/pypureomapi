@@ -8,8 +8,10 @@ version = "1.0"
 description = "ISC DHCP OMAPI protocol implementation in Python"
 readme = "README.md"
 requires-python = ">=3.11"
-license = "Apache-2.0"
-license-files = ["LICENSE.md"]
+# Classic table form for broad setuptools compatibility (EL9/Ubuntu ship
+# setuptools < 77, which rejects the PEP 639 SPDX string form). LICENSE.md is
+# auto-included in the sdist/wheel via setuptools' default license_files glob.
+license = { text = "Apache-2.0" }
 authors = [
 	{ name = "Helmut Grohne", email = "h.grohne@cygnusnetworks.de" },
 ]
@@ -20,6 +22,7 @@ keywords = ["isc", "dhcp", "omapi", "dhcpd"]
 classifiers = [
 	"Development Status :: 5 - Production/Stable",
 	"Intended Audience :: System Administrators",
+	"License :: OSI Approved :: Apache Software License",
 	"Programming Language :: Python",
 	"Programming Language :: Python :: 3",
 	"Programming Language :: Python :: 3.11",

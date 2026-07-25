@@ -1,0 +1,207 @@
+name: Release
+
+# Build distribution packages when a GitHub Release is published.
+# The release tag is the single source of truth for the version.
+# workflow_dispatch is provided for dry-runs: it builds everything and stores
+# the results as workflow artifacts without publishing to PyPI or the release.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build (dry-run, e.g. 1.1)"
+        required: true
+        default: "0.0.0"
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Build sdist + wheel
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Determine version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            V="${{ github.event.release.tag_name }}"
+          else
+            V="${{ github.event.inputs.version }}"
+          fi
+          echo "version=${V#v}" >> "$GITHUB_OUTPUT"
+      - name: Set version
+        run: packaging/set-version.sh "${{ steps.ver.outputs.version }}"
+      - name: Build
+        run: |
+          python -m pip install --upgrade build twine
+          python -m build
+          twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+
+  pypi:
+    name: Publish to PyPI
+    needs: python
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write   # trusted publishing (OIDC), no API token needed
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  release-python-assets:
+    name: Attach sdist + wheel to release
+    needs: python
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: dist/*
+
+  deb:
+    name: Build .deb (${{ matrix.label }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { image: "debian:12",   label: debian12 }
+          - { image: "debian:13",   label: debian13 }
+          - { image: "ubuntu:24.04", label: ubuntu2404 }
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential debhelper dh-python python3-all python3-setuptools \
+            pybuild-plugin-pyproject python3-pytest devscripts ca-certificates
+      - uses: actions/checkout@v4
+      - name: Determine version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            V="${{ github.event.release.tag_name }}"
+          else
+            V="${{ github.event.inputs.version }}"
+          fi
+          echo "version=${V#v}" >> "$GITHUB_OUTPUT"
+      - name: Set version
+        run: packaging/set-version.sh "${{ steps.ver.outputs.version }}"
+      - name: Build package
+        run: |
+          dpkg-buildpackage -us -uc -b
+          mkdir -p out
+          for f in ../python3-pypureomapi_*_all.deb; do
+            cp "$f" "out/$(basename "$f" .deb)_${{ matrix.label }}.deb"
+          done
+          ls -l out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb-${{ matrix.label }}
+          path: out/*.deb
+      - name: Attach to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: out/*.deb
+
+  rpm:
+    name: Build .rpm (${{ matrix.label }})
+    needs: python
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { image: "fedora:latest", label: fedora }
+          - { image: "rockylinux:9",  label: el9 }
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - name: Install build dependencies
+        run: |
+          if [ "${{ matrix.label }}" = "el9" ]; then
+            dnf -y install epel-release dnf-plugins-core
+            dnf config-manager --set-enabled crb
+            dnf -y install rpm-build python3.12-devel pyproject-rpm-macros
+          else
+            dnf -y install rpm-build python3-devel pyproject-rpm-macros dnf-plugins-core
+          fi
+      - uses: actions/checkout@v4
+      - name: Determine version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            V="${{ github.event.release.tag_name }}"
+          else
+            V="${{ github.event.inputs.version }}"
+          fi
+          echo "version=${V#v}" >> "$GITHUB_OUTPUT"
+      - name: Set version
+        run: packaging/set-version.sh "${{ steps.ver.outputs.version }}"
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - name: Build RPM
+        run: |
+          # EL9's default python (3.9) does not satisfy requires-python >= 3.11,
+          # so build against python3.12 there.
+          DEFINES=()
+          if [ "${{ matrix.label }}" = "el9" ]; then
+            DEFINES=(-D "python3_pkgversion 3.12")
+          fi
+          mkdir -p ~/rpmbuild/SOURCES
+          cp "dist/pypureomapi-${{ steps.ver.outputs.version }}.tar.gz" ~/rpmbuild/SOURCES/
+          # Two-phase build: %pyproject_buildrequires emits dynamic BuildRequires
+          # that plain rpmbuild does not auto-install; resolve them with builddep.
+          n=0
+          until rpmbuild "${DEFINES[@]}" -br pypureomapi.spec; do
+            n=$((n+1)); [ "$n" -gt 6 ] && { echo "too many buildrequires passes"; exit 1; }
+            dnf -y builddep ~/rpmbuild/SRPMS/python-pypureomapi-*.buildreqs.nosrc.rpm
+          done
+          rpmbuild "${DEFINES[@]}" -bb pypureomapi.spec
+          mkdir -p out
+          find ~/rpmbuild/RPMS -name '*.rpm' -exec cp {} out/ \;
+          ls -l out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rpm-${{ matrix.label }}
+          path: out/*.rpm
+      - name: Attach to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: out/*.rpm
