@@ -1,3 +1,14 @@
+pypureomapi (1.0) UNRELEASED; urgency=medium
+
+  * New upstream release
+  * Drop Python 2 compatibility; require Python >= 3.11
+  * Add full PEP 484 type hints
+  * Switch packaging to pyproject.toml (PEP 621)
+  * Fix add_group/add_host_with_group/add_host_supersede/change_group which
+    passed str instead of bytes and failed on Python 3
+
+ -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Fri, 25 Jul 2026 00:00:00 +0200
+
 pypureomapi (0.8) UNRELEASED; urgency=medium
 
   * New upstream release
