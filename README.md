@@ -3,7 +3,6 @@
 [![codecov](https://codecov.io/gh/CygnusNetworks/pypureomapi/branch/master/graph/badge.svg)](https://codecov.io/gh/CygnusNetworks/pypureomapi)
 [![Latest Version](https://img.shields.io/pypi/v/pypureomapi.svg)](https://pypi.python.org/pypi/pypureomapi)
 [![PyPi Status](https://img.shields.io/pypi/status/pypureomapi.svg)](https://pypi.python.org/pypi/pypureomapi) [![PyPi Versions](https://img.shields.io/pypi/pyversions/pypureomapi.svg)](https://pypi.python.org/pypi/pypureomapi)
-[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE.md)
 
 pypureomapi
