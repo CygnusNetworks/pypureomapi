@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pypureomapi"
+version = "1.0"
+description = "ISC DHCP OMAPI protocol implementation in Python"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE.md"]
+authors = [
+	{ name = "Helmut Grohne", email = "h.grohne@cygnusnetworks.de" },
+]
+maintainers = [
+	{ name = "Dr. Torge Szczepanek", email = "debian@cygnusnetworks.de" },
+]
+keywords = ["isc", "dhcp", "omapi", "dhcpd"]
+classifiers = [
+	"Development Status :: 5 - Production/Stable",
+	"Intended Audience :: System Administrators",
+	"Programming Language :: Python",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
+	"Programming Language :: Python :: 3.13",
+	"Topic :: Internet",
+	"Topic :: System :: Networking",
+	"Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/CygnusNetworks/pypureomapi"
+Repository = "https://github.com/CygnusNetworks/pypureomapi"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools]
+py-modules = ["pypureomapi"]
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules"
+testpaths = ["tests", "pypureomapi.py"]
+pythonpath = ["."]
+# pytest reports exceptions fully-qualified (pypureomapi.OmapiError) while the
+# doctests are written module-local; ignore the module prefix here. Strict
+# checking still happens via `python pypureomapi.py -v`.
+doctest_optionflags = ["ELLIPSIS", "IGNORE_EXCEPTION_DETAIL"]

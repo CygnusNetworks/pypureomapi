@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf8 -*-
+#!/usr/bin/env python3
 # pylint:disable=too-many-lines
 
 # library for communicating with an isc dhcp server over the omapi protocol
@@ -42,16 +41,16 @@ import io
 import logging
 import socket
 import random
-import operator
-try:
-	basestring
-except NameError:
-	basestring = str  # pylint:disable=W0622
+from collections.abc import Callable, Iterator
+from typing import Any, TypeVar
+
+_T = TypeVar("_T")
+_U = TypeVar("_U")
 
 __author__ = "Helmut Grohne, Dr. Torge Szczepanek"
 __copyright__ = "Cygnus Networks GmbH"
 __license__ = "Apache-2.0"
-__version__ = "0.8"
+__version__ = "1.0"
 __maintainer__ = "Dr. Torge Szczepanek"
 __email__ = "debian@cygnusnetworks.de"
 
@@ -71,13 +70,10 @@ OMAPI_OP_STATUS = 5
 OMAPI_OP_DELETE = 6
 
 
-def repr_opcode(opcode):
-	"""Returns a textual representation for the given opcode.
-	@type opcode: int
-	@rtype: str
-	"""
+def repr_opcode(opcode: int) -> str:
+	"""Returns a textual representation for the given opcode."""
 	opmap = {1: "open", 2: "refresh", 3: "update", 4: "notify", 5: "status", 6: "delete"}
-	return opmap.get(opcode, "unknown (%d)" % opcode)
+	return opmap.get(opcode, f"unknown ({opcode:d})")
 
 
 __all__.append("OmapiError")
@@ -92,7 +88,7 @@ __all__.append("OmapiSizeLimitError")
 
 class OmapiSizeLimitError(OmapiError):
 	"""Packet size limit reached."""
-	def __init__(self):
+	def __init__(self) -> None:
 		OmapiError.__init__(self, "Packet size limit reached.")
 
 
@@ -101,7 +97,7 @@ __all__.append("OmapiErrorNotFound")
 
 class OmapiErrorNotFound(OmapiError):
 	"""Not found."""
-	def __init__(self):
+	def __init__(self) -> None:
 		OmapiError.__init__(self, "not found")
 
 
@@ -110,25 +106,22 @@ __all__.append("OmapiErrorAttributeNotFound")
 
 class OmapiErrorAttributeNotFound(OmapiErrorNotFound):
 	"""Attribute not found."""
-	def __init__(self):  # pylint:disable=super-init-not-called
+	def __init__(self) -> None:  # pylint:disable=super-init-not-called
 		OmapiError.__init__(self, "attribute not found")  # pylint:disable=non-parent-init-called
 
 
-class OutBuffer(object):
+class OutBuffer:
 	"""Helper class for constructing network packets."""
 	sizelimit = 65536
 
-	def __init__(self):
+	def __init__(self) -> None:
 		self.buff = io.BytesIO()
 
-	def __len__(self):
-		"""Return the number of bytes in the buffer.
-		@rtype: int
-		"""
-		# On Py2.7 tell returns long, but __len__ is required to return int.
+	def __len__(self) -> int:
+		"""Return the number of bytes in the buffer."""
 		return int(self.buff.tell())
 
-	def add(self, data):
+	def add(self, data: bytes) -> "OutBuffer":
 		"""
 		>>> ob = OutBuffer().add(OutBuffer.sizelimit * b"x")
 		>>> ob.add(b"y") # doctest: +ELLIPSIS
@@ -136,8 +129,6 @@ class OutBuffer(object):
 		...
 		OmapiSizeLimitError: ...
 
-		@type data: bytes
-		@returns: self
 		@raises OmapiSizeLimitError:
 		"""
 		if len(self) + len(data) > self.sizelimit:
@@ -145,95 +136,78 @@ class OutBuffer(object):
 		self.buff.write(data)
 		return self
 
-	def add_net32int(self, integer):
-		"""
-		@type integer: int
-		@param integer: a 32bit unsigned integer
-		@returns: self
+	def add_net32int(self, integer: int) -> "OutBuffer":
+		"""Append a 32bit unsigned integer.
 		@raises OmapiSizeLimitError:
 		"""
 		if integer < 0 or integer >= (1 << 32):
 			raise ValueError("not a 32bit unsigned integer")
 		return self.add(struct.pack("!L", integer))
 
-	def add_net16int(self, integer):
-		"""
-		@type integer: int
-		@param integer: a 16bit unsigned integer
-		@returns: self
+	def add_net16int(self, integer: int) -> "OutBuffer":
+		"""Append a 16bit unsigned integer.
 		@raises OmapiSizeLimitError:
 		"""
 		if integer < 0 or integer >= (1 << 16):
 			raise ValueError("not a 16bit unsigned integer")
 		return self.add(struct.pack("!H", integer))
 
-	def add_net32string(self, string):
-		"""
+	def add_net32string(self, string: bytes) -> "OutBuffer":
+		"""Append a string prefixed with its length as a 32bit integer.
+
 		>>> r = b'\\x00\\x00\\x00\\x01x'
 		>>> OutBuffer().add_net32string(b"x").getvalue() == r
 		True
 
-		@type string: bytes
-		@param string: maximum length must fit in a 32bit integer
-		@returns: self
 		@raises OmapiSizeLimitError:
 		"""
 		if len(string) >= (1 << 32):
 			raise ValueError("string too long")
 		return self.add_net32int(len(string)).add(string)
 
-	def add_net16string(self, string):
-		"""
+	def add_net16string(self, string: bytes) -> "OutBuffer":
+		"""Append a string prefixed with its length as a 16bit integer.
+
 		>>> OutBuffer().add_net16string(b"x").getvalue() == b'\\x00\\x01x'
 		True
 
-		@type string: bytes
-		@param string: maximum length must fit in a 16bit integer
-		@returns: self
 		@raises OmapiSizeLimitError:
 		"""
 		if len(string) >= (1 << 16):
 			raise ValueError("string too long")
 		return self.add_net16int(len(string)).add(string)
 
-	def add_bindict(self, items):
+	def add_bindict(self, items: "list[tuple[bytes, bytes]] | dict[bytes, bytes]") -> "OutBuffer":
 		"""
 		>>> r = b'\\x00\\x03foo\\x00\\x00\\x00\\x03bar\\x00\\x00'
 		>>> OutBuffer().add_bindict({b"foo": b"bar"}).getvalue() == r
 		True
 
-		@type items: [(bytes, bytes)] or {bytes: bytes}
-		@returns: self
 		@raises OmapiSizeLimitError:
 		"""
-		if not isinstance(items, list):
-			items = items.items()
+		if isinstance(items, dict):
+			items = list(items.items())
 		for key, value in items:
 			self.add_net16string(key).add_net32string(value)
 		return self.add(b"\x00\x00")  # end marker
 
-	def getvalue(self):
+	def getvalue(self) -> bytes:
 		"""
 		>>> OutBuffer().add(b"sp").add(b"am").getvalue() == b"spam"
 		True
-
-		@rtype: bytes
 		"""
 		return self.buff.getvalue()
 
-	def consume(self, length):
+	def consume(self, length: int) -> "OutBuffer":
 		"""
 		>>> OutBuffer().add(b"spam").consume(2).getvalue() == b"am"
 		True
-
-		@type length: int
-		@returns: self
 		"""
 		self.buff = io.BytesIO(self.getvalue()[length:])
 		return self
 
 
-class OmapiStartupMessage(object):
+class OmapiStartupMessage:
 	"""Class describing the protocol negotiation messages.
 
 	>>> s = OmapiStartupMessage().as_string()
@@ -248,11 +222,7 @@ class OmapiStartupMessage(object):
 	implemented_protocol_version = 100
 	implemented_header_size = 4 * 6
 
-	def __init__(self, protocol_version=None, header_size=None):
-		"""
-		@type protocol_version: int or None
-		@type header_size: int or None
-		"""
+	def __init__(self, protocol_version: "int | None" = None, header_size: "int | None" = None) -> None:
 		if protocol_version is None:
 			protocol_version = self.implemented_protocol_version
 		if header_size is None:
@@ -260,7 +230,7 @@ class OmapiStartupMessage(object):
 		self.protocol_version = protocol_version
 		self.header_size = header_size
 
-	def validate(self):
+	def validate(self) -> None:
 		"""Checks whether this OmapiStartupMessage matches the implementation.
 		@raises OmapiError:
 		"""
@@ -269,58 +239,40 @@ class OmapiStartupMessage(object):
 		if self.implemented_header_size != self.header_size:
 			raise OmapiError("header size mismatch")
 
-	def as_string(self):
-		"""
-		@rtype: bytes
-		"""
+	def as_string(self) -> bytes:
 		ret = OutBuffer()
 		self.serialize(ret)
 		return ret.getvalue()
 
-	def serialize(self, outbuffer):
-		"""Serialize this OmapiStartupMessage to the given outbuffer.
-		@type outbuffer: OutBuffer
-		"""
+	def serialize(self, outbuffer: OutBuffer) -> None:
+		"""Serialize this OmapiStartupMessage to the given outbuffer."""
 		outbuffer.add_net32int(self.protocol_version)
 		outbuffer.add_net32int(self.header_size)
 
-	def dump_oneline(self):
-		"""
-		@rtype: str
-		@returns: a human readable representation in one line
-		"""
-		return "protocol_version=%d header_size=%d" % (self.protocol_version, self.header_size)
+	def dump_oneline(self) -> str:
+		"""@returns: a human readable representation in one line"""
+		return f"protocol_version={self.protocol_version:d} header_size={self.header_size:d}"
 
 
-class OmapiAuthenticatorBase(object):
+class OmapiAuthenticatorBase:
 	"""Base class for OMAPI authenticators.
 	@cvar authlen: is the length of a signature as returned by the sign method
-	@type authlen: int
 	@cvar algorithm: is a textual name for the algorithm
-	@type algorithm: str or None
 	@ivar authid: is the authenticator id as assigned during the handshake
-	@type authid: int
 	"""
 	authlen = -1  # must be overwritten
-	algorithm = None
+	algorithm: "bytes | None" = None
 	authid = -1  # will be an instance attribute
 
-	def __init__(self):
+	def __init__(self) -> None:
 		pass
 
-	def auth_object(self):
-		"""
-		@rtype: {bytes: bytes}
-		@returns: object part of an omapi authentication message
-		"""
+	def auth_object(self) -> "dict[bytes, bytes]":
+		"""@returns: object part of an omapi authentication message"""
 		raise NotImplementedError
 
-	def sign(self, message):
-		"""
-		@type message: bytes
-		@rtype: bytes
-		@returns: a signature of length self.authlen
-		"""
+	def sign(self, message: bytes) -> bytes:
+		"""@returns: a signature of length self.authlen"""
 		raise NotImplementedError()
 
 
@@ -328,13 +280,13 @@ class OmapiNullAuthenticator(OmapiAuthenticatorBase):
 	authlen = 0
 	authid = 0  # always 0
 
-	def __init__(self):
+	def __init__(self) -> None:
 		OmapiAuthenticatorBase.__init__(self)
 
-	def auth_object(self):
+	def auth_object(self) -> "dict[bytes, bytes]":
 		return {}
 
-	def sign(self, _):
+	def sign(self, message: bytes) -> bytes:
 		return b""
 
 
@@ -342,10 +294,8 @@ class OmapiHMACMD5Authenticator(OmapiAuthenticatorBase):
 	authlen = 16
 	algorithm = b"hmac-md5.SIG-ALG.REG.INT."
 
-	def __init__(self, user, key):
+	def __init__(self, user: bytes, key: bytes) -> None:
 		"""
-		@type user: bytes
-		@type key: bytes
 		@param key: base64 encoded key
 		@raises binascii.Error: for bad base64 encoding
 		"""
@@ -355,17 +305,15 @@ class OmapiHMACMD5Authenticator(OmapiAuthenticatorBase):
 		assert isinstance(key, bytes)
 		self.key = binascii.a2b_base64(key)
 
-	def auth_object(self):
+	def auth_object(self) -> "dict[bytes, bytes]":
 		return {b"name": self.user, b"algorithm": self.algorithm}
 
-	def sign(self, message):
+	def sign(self, message: bytes) -> bytes:
 		"""
 		>>> authlen = OmapiHMACMD5Authenticator.authlen
 		>>> len(OmapiHMACMD5Authenticator(b"foo", 16*b"x").sign(b"baz")) == authlen
 		True
 
-		@type message: bytes
-		@rtype: bytes
 		@returns: a signature of length self.authlen
 		"""
 		return hmac.HMAC(self.key, message, digestmod=hashlib.md5).digest()
@@ -374,42 +322,25 @@ class OmapiHMACMD5Authenticator(OmapiAuthenticatorBase):
 __all__.append("OmapiMessage")
 
 
-class OmapiMessage(object):  # pylint:disable=too-many-instance-attributes
+class OmapiMessage:  # pylint:disable=too-many-instance-attributes
 	"""
-	@type authid: int
 	@ivar authid: The id of the message authenticator.
-	@type opcode: int
 	@ivar opcode: One out of
 			OMAPI_OP_{OPEN,REFRESH,UPDATE,NOTIFY,STATUS,DELETE}.
-	@type handle: int
 	@ivar handle: The id of a handle acquired from a previous request or 0.
-	@type tid: int
 	@ivar tid: Transmission identifier.
-	@type rid: int
 	@ivar rid: Receive identifier (of a response is the tid of the request).
-	@type message: [(bytes, bytes)]
 	@ivar message: A list of (key, value) pairs.
-	@type obj: [(bytes, bytes)]
 	@ivar obj: A list of (key, value) pairs.
-	@type signature: bytes
 	@ivar signature: A signature on this message as generated by an
 			authenticator.
 	"""
-	def __init__(self, authid=0, opcode=0, handle=0, tid=0, rid=0, message=None, obj=None, signature=b""):  # pylint:disable=too-many-arguments
+	def __init__(self, authid: int = 0, opcode: int = 0, handle: int = 0, tid: int = 0, rid: int = 0, message: "list[tuple[bytes, bytes]] | None" = None, obj: "list[tuple[bytes, bytes]] | None" = None, signature: bytes = b"") -> None:  # pylint:disable=too-many-arguments
 		"""
 		Construct an OmapiMessage from the given fields. No error
 		checking is performed.
 
-		@type authid: int
-		@type opcode: int
-		@type handle: int
-		@type tid: int
 		@param tid: The special value -1 causes a tid to be generated randomly.
-		@type rid: int
-		@type message: [(bytes, bytes)]
-		@type obj: [(bytes, bytes)]
-		@type signature: str
-		@rtype: OmapiMessage
 		"""
 		self.authid, self.opcode, self.handle = authid, opcode, handle
 		self.handle, self.tid, self.rid = handle, tid, rid
@@ -420,7 +351,7 @@ class OmapiMessage(object):  # pylint:disable=too-many-instance-attributes
 		if self.tid == -1:
 			self.generate_tid()
 
-	def generate_tid(self):
+	def generate_tid(self) -> None:
 		"""Generate a random transmission id for this OMAPI message.
 
 		>>> OmapiMessage(tid=-1).tid != OmapiMessage(tid=-1).tid
@@ -428,10 +359,8 @@ class OmapiMessage(object):  # pylint:disable=too-many-instance-attributes
 		"""
 		self.tid = sysrand.randrange(0, 1 << 32)
 
-	def serialize(self, outbuffer, forsigning=False):
+	def serialize(self, outbuffer: OutBuffer, forsigning: bool = False) -> None:
 		"""
-		@type outbuffer: OutBuffer
-		@type forsigning: bool
 		@raises OmapiSizeLimitError:
 		"""
 		if not forsigning:
@@ -446,29 +375,25 @@ class OmapiMessage(object):  # pylint:disable=too-many-instance-attributes
 		if not forsigning:
 			outbuffer.add(self.signature)
 
-	def as_string(self, forsigning=False):
+	def as_string(self, forsigning: bool = False) -> bytes:
 		"""
 		>>> len(OmapiMessage().as_string(True)) >= 24
 		True
 
-		@type forsigning: bool
-		@rtype: bytes
 		@raises OmapiSizeLimitError:
 		"""
 		ret = OutBuffer()
 		self.serialize(ret, forsigning)
 		return ret.getvalue()
 
-	def sign(self, authenticator):
-		"""Sign this OMAPI message.
-		@type authenticator: OmapiAuthenticatorBase
-		"""
+	def sign(self, authenticator: OmapiAuthenticatorBase) -> None:
+		"""Sign this OMAPI message."""
 		self.authid = authenticator.authid
 		self.signature = b"\0" * authenticator.authlen  # provide authlen
 		self.signature = authenticator.sign(self.as_string(forsigning=True))
 		assert len(self.signature) == authenticator.authlen
 
-	def verify(self, authenticators):
+	def verify(self, authenticators: "dict[int, OmapiAuthenticatorBase]") -> bool:
 		"""Verify this OMAPI message.
 
 		>>> a1 = OmapiHMACMD5Authenticator(b"egg", b"spam")
@@ -483,76 +408,53 @@ class OmapiMessage(object):  # pylint:disable=too-many-instance-attributes
 		>>> m.sign(a2)
 		>>> m.verify({a1.authid: a1})
 		False
-
-		@type authenticators: {int: OmapiAuthenticatorBase}
-		@rtype: bool
 		"""
 		try:
-			return authenticators[self.authid]. sign(self.as_string(forsigning=True)) == self.signature
+			return authenticators[self.authid].sign(self.as_string(forsigning=True)) == self.signature
 		except KeyError:
 			return False
 
 	@classmethod
-	def open(cls, typename):
-		"""Create an OMAPI open message with given typename.
-		@type typename: bytes
-		@rtype: OmapiMessage
-		"""
+	def open(cls, typename: bytes) -> "OmapiMessage":
+		"""Create an OMAPI open message with given typename."""
 		return cls(opcode=OMAPI_OP_OPEN, message=[(b"type", typename)], tid=-1)
 
 	@classmethod
-	def update(cls, handle):
-		"""Create an OMAPI update message for the given handle.
-		@type handle: int
-		@rtype: OmapiMessage
-		"""
+	def update(cls, handle: int) -> "OmapiMessage":
+		"""Create an OMAPI update message for the given handle."""
 		return cls(opcode=OMAPI_OP_UPDATE, handle=handle, tid=-1)
 
 	@classmethod
-	def delete(cls, handle):
-		"""Create an OMAPI delete message for given handle.
-		@type handle: int
-		@rtype: OmapiMessage
-		"""
+	def delete(cls, handle: int) -> "OmapiMessage":
+		"""Create an OMAPI delete message for given handle."""
 		return cls(opcode=OMAPI_OP_DELETE, handle=handle, tid=-1)
 
-	def is_response(self, other):
+	def is_response(self, other: "OmapiMessage") -> bool:
 		"""Check whether this OMAPI message is a response to the given
 		OMAPI message.
-		@rtype: bool
 		"""
 		return self.rid == other.tid
 
-	def update_object(self, update):
-		"""
-		@type update: {bytes: bytes}
-		"""
+	def update_object(self, update: "dict[bytes, bytes]") -> None:
 		self.obj = [(key, value) for key, value in self.obj if key not in update]
 		self.obj.extend(update.items())
 
-	def dump(self):
-		"""
-		@rtype: str
-		@returns: a human readable representation of the message
-		"""
-		return "".join(("Omapi message attributes:\n", "authid:\t\t%d\n" % self.authid, "authlen:\t%d\n" % len(self.signature), "opcode:\t\t%s\n" % repr_opcode(self.opcode), "handle:\t\t%d\n" % self.handle, "tid:\t\t%d\n" % self.tid, "rid:\t\t%d\n" % self.rid, "message:\t%r\n" % self.message, "obj:\t\t%r\n" % self.obj, "signature:\t%r\n" % self.signature))
+	def dump(self) -> str:
+		"""@returns: a human readable representation of the message"""
+		return "".join(("Omapi message attributes:\n", f"authid:\t\t{self.authid:d}\n", f"authlen:\t{len(self.signature):d}\n", f"opcode:\t\t{repr_opcode(self.opcode)}\n", f"handle:\t\t{self.handle:d}\n", f"tid:\t\t{self.tid:d}\n", f"rid:\t\t{self.rid:d}\n", f"message:\t{self.message!r}\n", f"obj:\t\t{self.obj!r}\n", f"signature:\t{self.signature!r}\n"))
 
-	def dump_oneline(self):
-		"""
-		@rtype: str
-		@returns: a barely human readable representation in one line
-		"""
-		return "authid=%d authlen=%d opcode=%s handle=%d tid=%d rid=%d message=%r obj=%r signature=%r" % (self.authid, len(self.signature), repr_opcode(self.opcode), self.handle, self.tid, self.rid, self.message, self.obj, self.signature)
+	def dump_oneline(self) -> str:
+		"""@returns: a barely human readable representation in one line"""
+		return f"authid={self.authid:d} authlen={len(self.signature):d} opcode={repr_opcode(self.opcode)} handle={self.handle:d} tid={self.tid:d} rid={self.rid:d} message={self.message!r} obj={self.obj!r} signature={self.signature!r}"
 
 
-def parse_map(filterfun, parser):
+def parse_map(filterfun: "Callable[[_T], _U]", parser: "Iterator[_T | None]") -> "Iterator[_U | None]":
 	"""Creates a new parser that passes the result of the given parser through
 	the given filterfun.
 
-	>>> list(parse_map(int, (None, "42")))
+	>>> list(parse_map(int, iter((None, "42"))))
 	[None, 42]
 
-	@type filterfun: obj -> obj
 	@param parser: parser
 	@returns: parser
 	"""
@@ -564,17 +466,17 @@ def parse_map(filterfun, parser):
 			break
 
 
-def parse_chain(*args):
+def parse_chain(*args: "Callable[..., Iterator[Any]]") -> "Iterator[Any]":
 	"""Creates a new parser that executes the passed parsers (args) with the
 	previous results and yields a tuple of the results.
 
-	>>> list(parse_chain(lambda: (None, 1), lambda one: (None, 2)))
+	>>> list(parse_chain(lambda: iter((None, 1)), lambda one: iter((None, 2))))
 	[None, None, (1, 2)]
 
 	@param args: parsers
 	@returns: parser
 	"""
-	items = []
+	items: "list[Any]" = []
 	for parser in args:
 		for element in parser(*items):
 			if element is None:
@@ -585,12 +487,11 @@ def parse_chain(*args):
 	yield tuple(items)
 
 
-class InBuffer(object):
+class InBuffer:
 	sizelimit = 65536
 
-	def __init__(self, initial=b""):
+	def __init__(self, initial: bytes = b"") -> None:
 		"""
-		@type initial: bytes
 		@param initial: initial value of the buffer
 		@raises OmapiSizeLimitError:
 		"""
@@ -599,10 +500,8 @@ class InBuffer(object):
 		if initial:
 			self.feed(initial)
 
-	def feed(self, data):
+	def feed(self, data: bytes) -> "InBuffer":
 		"""
-		@type data: bytes
-		@returns: self
 		@raises OmapiSizeLimitError:
 		"""
 		if self.totalsize + len(data) > self.sizelimit:
@@ -611,79 +510,75 @@ class InBuffer(object):
 		self.totalsize += len(data)
 		return self
 
-	def resetsize(self):
+	def resetsize(self) -> None:
 		"""This method is to be called after handling a packet to
 		reset the total size to be parsed at once and that way not
 		overflow the size limit.
 		"""
 		self.totalsize = len(self.buff)
 
-	def parse_fixedbuffer(self, length):
-		"""
-		@type length: int
-		"""
+	def parse_fixedbuffer(self, length: int) -> "Iterator[bytes | None]":
 		while len(self.buff) < length:
 			yield None
 		result = self.buff[:length]
 		self.buff = self.buff[length:]
 		yield result
 
-	def parse_net16int(self):
+	def parse_net16int(self) -> "Iterator[int | None]":
 		"""
 		>>> hex(next(InBuffer(b"\\x01\\x02").parse_net16int()))
 		'0x102'
 		"""
 		return parse_map(lambda data: struct.unpack("!H", data)[0], self.parse_fixedbuffer(2))
 
-	def parse_net32int(self):
+	def parse_net32int(self) -> "Iterator[int | None]":
 		"""
 		>>> hex(int(next(InBuffer(b"\\x01\\0\\0\\x02").parse_net32int())))
 		'0x1000002'
 		"""
 		return parse_map(lambda data: struct.unpack("!L", data)[0], self.parse_fixedbuffer(4))
 
-	def parse_net16string(self):
+	def parse_net16string(self) -> "Iterator[bytes | None]":
 		"""
 		>>> next(InBuffer(b"\\0\\x03eggs").parse_net16string()) == b'egg'
 		True
 		"""
-		return parse_map(operator.itemgetter(1), parse_chain(self.parse_net16int, self.parse_fixedbuffer))
+		return parse_map(lambda pair: pair[1], parse_chain(self.parse_net16int, self.parse_fixedbuffer))
 
-	def parse_net32string(self):
+	def parse_net32string(self) -> "Iterator[bytes | None]":
 		"""
 		>>> next(InBuffer(b"\\0\\0\\0\\x03eggs").parse_net32string()) == b'egg'
 		True
 		"""
-		return parse_map(operator.itemgetter(1), parse_chain(self.parse_net32int, self.parse_fixedbuffer))
+		return parse_map(lambda pair: pair[1], parse_chain(self.parse_net32int, self.parse_fixedbuffer))
 
-	def parse_bindict(self):
+	def parse_bindict(self) -> "Iterator[list[tuple[bytes, bytes]] | None]":
 		"""
 		>>> d = b"\\0\\x01a\\0\\0\\0\\x01b\\0\\0spam"
 		>>> next(InBuffer(d).parse_bindict()) == [(b'a', b'b')]
 		True
 		"""
 		entries = []
-		try:  # pylint:disable=too-many-nested-blocks
-			while True:
-				for key in self.parse_net16string():
-					if key is None:
-						yield None
-					elif not key:
-						raise StopIteration()
-					else:
-						for value in self.parse_net32string():
-							if value is None:
-								yield None
-							else:
-								entries.append((key, value))
-								break
-						break
-		# Abusing StopIteration here, since nothing should be throwing
-		# it at us.
-		except StopIteration:
-			yield entries
+		while True:  # pylint:disable=too-many-nested-blocks
+			done = False
+			for key in self.parse_net16string():
+				if key is None:
+					yield None
+				elif not key:
+					done = True  # empty key marks the end of the dictionary
+				else:
+					for value in self.parse_net32string():
+						if value is None:
+							yield None
+						else:
+							entries.append((key, value))
+							break
+					break
+			if done:
+				break
+		yield entries
 
-	def parse_startup_message(self):
+	def parse_startup_message(self) -> "Iterator[OmapiStartupMessage | None]":
 		"""results in an OmapiStartupMessage
 
 		>>> d = b"\\0\\0\\0\\x64\\0\\0\\0\\x18"
@@ -691,7 +586,7 @@ class InBuffer(object):
 		"""
 		return parse_map(lambda args: OmapiStartupMessage(*args), parse_chain(self.parse_net32int, lambda _: self.parse_net32int()))
 
-	def parse_message(self):
+	def parse_message(self) -> "Iterator[OmapiMessage | None]":
 		"""results in an OmapiMessage"""
 		parser = parse_chain(self.parse_net32int,  # authid
 							lambda *_: self.parse_net32int(),  # authlen
@@ -706,22 +601,10 @@ class InBuffer(object):
 				OmapiMessage(*(args[0:1] + args[2:])), parser)
 
 
-if isinstance(bytes(b"x")[0], int):
-	def bytes_to_int_seq(b):
-		return b
-	int_seq_to_bytes = bytes  # raises ValueError
-else:
-	def bytes_to_int_seq(b):
-		return [ord(x) for x in b]
-
-	def int_seq_to_bytes(s):
-		return "".join([chr(x) for x in s])  # raises ValueError
-
-
 __all__.append("pack_ip")
 
 
-def pack_ip(ipstr):
+def pack_ip(ipstr: str) -> bytes:
 	"""Converts an ip address given in dotted notation to a four byte
 	string in network byte order.
 
@@ -732,23 +615,20 @@ def pack_ip(ipstr):
 	...
 	ValueError: given ip address has an invalid number of dots
 
-	@type ipstr: str
-	@rtype: bytes
 	@raises ValueError: for badly formatted ip addresses
 	"""
-	if not isinstance(ipstr, basestring):
+	if not isinstance(ipstr, str):
 		raise ValueError("given ip address is not a string")
 	parts = ipstr.split('.')
 	if len(parts) != 4:
 		raise ValueError("given ip address has an invalid number of dots")
-	parts = [int(x) for x in parts]  # raises ValueError
-	return int_seq_to_bytes(parts)  # raises ValueError
+	return bytes(int(x) for x in parts)  # raises ValueError
 
 
 __all__.append("unpack_ip")
 
 
-def unpack_ip(fourbytes):
+def unpack_ip(fourbytes: bytes) -> str:
 	"""Converts an ip address given in a four byte string in network
 	byte order to a string in dotted notation.
 
@@ -759,21 +639,19 @@ def unpack_ip(fourbytes):
 	...
 	ValueError: given buffer is not exactly four bytes long
 
-	@type fourbytes: bytes
-	@rtype: str
 	@raises ValueError: for bad input
 	"""
 	if not isinstance(fourbytes, bytes):
 		raise ValueError("given buffer is not a string")
 	if len(fourbytes) != 4:
 		raise ValueError("given buffer is not exactly four bytes long")
-	return ".".join([str(x) for x in bytes_to_int_seq(fourbytes)])
+	return ".".join(str(x) for x in fourbytes)
 
 
 __all__.append("pack_mac")
 
 
-def pack_mac(macstr):
+def pack_mac(macstr: str) -> bytes:
 	"""Converts a mac address given in colon delimited notation to a
 	six byte string in network byte order.
 
@@ -785,23 +663,20 @@ def pack_mac(macstr):
 	ValueError: given mac addresses has an invalid number of colons
 
 
-	@type macstr: str
-	@rtype: bytes
 	@raises ValueError: for badly formatted mac addresses
 	"""
-	if not isinstance(macstr, basestring):
+	if not isinstance(macstr, str):
 		raise ValueError("given mac addresses is not a string")
 	parts = macstr.split(":")
 	if len(parts) != 6:
 		raise ValueError("given mac addresses has an invalid number of colons")
-	parts = [int(part, 16) for part in parts]  # raises ValueError
-	return int_seq_to_bytes(parts)  # raises ValueError
+	return bytes(int(part, 16) for part in parts)  # raises ValueError
 
 
 __all__.append("unpack_mac")
 
 
-def unpack_mac(sixbytes):
+def unpack_mac(sixbytes: bytes) -> str:
 	"""Converts a mac address given in a six byte string in network
 	byte order to a string in colon delimited notation.
 
@@ -812,41 +687,39 @@ def unpack_mac(sixbytes):
 	...
 	ValueError: given buffer is not exactly six bytes long
 
-	@type sixbytes: bytes
-	@rtype: str
 	@raises ValueError: for bad input
 	"""
 	if not isinstance(sixbytes, bytes):
 		raise ValueError("given buffer is not a string")
 	if len(sixbytes) != 6:
 		raise ValueError("given buffer is not exactly six bytes long")
-	return ":".join(["%2.2x".__mod__(x) for x in bytes_to_int_seq(sixbytes)])
+	return ":".join(f"{x:02x}" for x in sixbytes)
 
 
-class LazyStr(object):  # pylint:disable=too-few-public-methods
-	def __init__(self, fnc):
+class LazyStr:  # pylint:disable=too-few-public-methods
+	def __init__(self, fnc: "Callable[[], str]") -> None:
 		self.function = fnc
 
-	def __str__(self):
+	def __str__(self) -> str:
 		return self.function()
 
 
-class TCPClientTransport(object):
+class TCPClientTransport:
 	"""PEP 3156 dummy transport class to support OmapiProtocol class."""
-	def __init__(self, protocol, host, port, timeout=None):
+	def __init__(self, protocol: "OmapiProtocol", host: str, port: int, timeout: "float | None" = None) -> None:
 		self.protocol = protocol
-		self.connection = socket.socket()
+		self.connection: "socket.socket | None" = socket.socket()
 		self.connection.settimeout(timeout)
 		self.connection.connect((host, port))
 		self.protocol.connection_made(self)
 
-	def close(self):
+	def close(self) -> None:
 		"""Close the omapi connection if it is open."""
 		if self.connection:
 			self.connection.close()
 			self.connection = None
 
-	def fill_inbuffer(self):
+	def fill_inbuffer(self) -> None:
 		"""Read bytes from the connection and hand them to the protocol.
 		@raises OmapiError:
 		@raises socket.error:
@@ -867,12 +740,13 @@ class TCPClientTransport(object):
 			self.close()
 			raise
 
-	def write(self, data):
+	def write(self, data: bytes) -> None:
 		"""Send all of data to the connection.
 
-		@type data: bytes
 		@raises socket.error:
 		"""
+		if self.connection is None:
+			raise OmapiError("not connected")
 		try:
 			self.connection.sendall(data)
 		except socket.error:
@@ -880,28 +754,25 @@ class TCPClientTransport(object):
 			raise
 
 
-class OmapiProtocol(object):
+class OmapiProtocol:
 	"""PEP 3156 like protocol class for Omapi.
 
 	This interface is not yet to be relied upon.
 	"""
-	def __init__(self):
-		self.transport = None
-		self.authenticators = {0: OmapiNullAuthenticator()}
+	def __init__(self) -> None:
+		self.transport: "TCPClientTransport | None" = None
+		self.authenticators: "dict[int, OmapiAuthenticatorBase]" = {0: OmapiNullAuthenticator()}
 		self.defauth = 0
 		self.inbuffer = InBuffer()
-		self.current_parser = self.inbuffer.parse_startup_message()
+		self.current_parser: "Iterator[object] | None" = self.inbuffer.parse_startup_message()
 
-	def connection_made(self, transport):
+	def connection_made(self, transport: "TCPClientTransport") -> None:
 		self.transport = transport
 		message = OmapiStartupMessage()
 		logger.debug("sending omapi startup message %s", LazyStr(message.dump_oneline))
 		self.transport.write(message.as_string())
 
-	def data_received(self, data):
-		"""
-		@type data: bytes
-		"""
+	def data_received(self, data: bytes) -> None:
 		self.inbuffer.feed(data)
 		while True:
 			if self.current_parser is None:
@@ -919,7 +790,8 @@ class OmapiProtocol(object):
 				logger.debug("received %s", LazyStr(result.dump_oneline))
 				self.message_received(result)
 
-	def startup_received(self, startup_message):
+	def startup_received(self, startup_message: OmapiStartupMessage) -> None:
+		assert self.transport is not None
 		try:
 			startup_message.validate()
 		except OmapiError:
@@ -928,16 +800,15 @@ class OmapiProtocol(object):
 		self.startup_completed()
 
 	@staticmethod
-	def startup_completed():
+	def startup_completed() -> None:
 		logger.debug("omapi connection initialized")
 
-	def message_received(self, message):
+	def message_received(self, message: OmapiMessage) -> None:
 		pass
 
-	def send_message(self, message, sign=True):
+	def send_message(self, message: OmapiMessage, sign: bool = True) -> None:
 		"""Send the given message to the connection.
 
-		@type message: OmapiMessage
 		@param sign: whether the message needs to be signed
 		@raises OmapiError:
 		@raises socket.error:
@@ -945,19 +816,16 @@ class OmapiProtocol(object):
 		if sign:
 			message.sign(self.authenticators[self.defauth])
 		logger.debug("sending %s", LazyStr(message.dump_oneline))
+		assert self.transport is not None
 		self.transport.write(message.as_string())
 
 
 __all__.append("Omapi")
 
 
-class Omapi(object):  # pylint:disable=too-many-public-methods
-	def __init__(self, hostname, port, username=None, key=None, timeout=None):  # pylint:disable=too-many-arguments
+class Omapi:  # pylint:disable=too-many-public-methods
+	def __init__(self, hostname: str, port: int, username: "bytes | None" = None, key: "bytes | None" = None, timeout: "float | None" = None) -> None:  # pylint:disable=too-many-arguments
 		"""
-		@type hostname: str
-		@type port: int
-		@type username: bytes or None
-		@type key: bytes or None
 		@param key: if given, it must be base64 encoded
 		@raises binascii.Error: for bad base64 encoding
 		@raises socket.error:
@@ -966,9 +834,9 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		self.hostname = hostname
 		self.port = port
 		self.protocol = OmapiProtocol()
-		self.recv_message_queue = []
-		self.protocol.startup_completed = lambda: self.recv_message_queue.append(None)
-		self.protocol.message_received = self.recv_message_queue.append
+		self.recv_message_queue: "list[OmapiMessage | None]" = []
+		self.protocol.startup_completed = lambda: self.recv_message_queue.append(None)  # type: ignore[method-assign]
+		self.protocol.message_received = self.recv_message_queue.append  # type: ignore[method-assign,assignment]
 
 		newauth = None
 		if username is not None and key is not None:
@@ -981,18 +849,18 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		if newauth:
 			self.initialize_authenticator(newauth)
 
-	def close(self):
+	def close(self) -> None:
 		"""Close the omapi connection if it is open."""
 		self.transport.close()
 
-	def check_connected(self):
+	def check_connected(self) -> None:
 		"""Raise an OmapiError unless connected.
 		@raises OmapiError:
 		"""
 		if not self.transport.connection:
 			raise OmapiError("not connected")
 
-	def recv_protocol_initialization(self):
+	def recv_protocol_initialization(self) -> None:
 		"""
 		@raises OmapiError:
 		@raises socket.error:
@@ -1002,9 +870,8 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		message = self.recv_message_queue.pop(0)
 		assert message is None
 
-	def receive_message(self):
+	def receive_message(self) -> OmapiMessage:
 		"""Read the next message from the connection.
-		@rtype: OmapiMessage
 		@raises OmapiError:
 		@raises socket.error:
 		"""
@@ -1017,12 +884,9 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 			raise OmapiError("bad omapi message signature")
 		return message
 
-	def receive_response(self, message, insecure=False):
+	def receive_response(self, message: OmapiMessage, insecure: bool = False) -> OmapiMessage:
 		"""Read the response for the given message.
-		@type message: OmapiMessage
-		@type insecure: bool
 		@param insecure: avoid an OmapiError about a wrong authenticator
-		@rtype: OmapiMessage
 		@raises OmapiError:
 		@raises socket.error:
 		"""
@@ -1034,10 +898,8 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 			raise OmapiError("received message is signed with wrong authenticator")
 		return response
 
-	def send_message(self, message, sign=True):
+	def send_message(self, message: OmapiMessage, sign: bool = True) -> None:
 		"""Sends the given message to the connection.
-		@type message: OmapiMessage
-		@type sign: bool
 		@param sign: whether the message needs to be signed
 		@raises OmapiError:
 		@raises socket.error:
@@ -1045,19 +907,16 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		self.check_connected()
 		self.protocol.send_message(message, sign)
 
-	def query_server(self, message):
+	def query_server(self, message: OmapiMessage) -> OmapiMessage:
 		"""Send the message and receive a response for it.
-		@type message: OmapiMessage
-		@rtype: OmapiMessage
 		@raises OmapiError:
 		@raises socket.error:
 		"""
 		self.send_message(message)
 		return self.receive_response(message)
 
-	def initialize_authenticator(self, authenticator):
+	def initialize_authenticator(self, authenticator: OmapiAuthenticatorBase) -> None:
 		"""
-		@type authenticator: OmapiAuthenticatorBase
 		@raises OmapiError:
 		@raises socket.error:
 		"""
@@ -1074,10 +933,9 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		self.protocol.defauth = authid
 		logger.debug("successfully initialized default authid %d", authid)
 
-	def lookup_ip_host(self, mac):
+	def lookup_ip_host(self, mac: str) -> str:
 		"""Lookup a host object with with given mac address.
 
-		@type mac: str
 		@raises ValueError:
 		@raises OmapiError:
 		@raises OmapiErrorNotFound: if no lease object with the given mac could be found
@@ -1088,14 +946,12 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		try:
 			return res["ip-address"]
 		except KeyError:
-			raise OmapiErrorAttributeNotFound()
+			raise OmapiErrorAttributeNotFound() from None
 
-	def lookup_ip(self, mac):
+	def lookup_ip(self, mac: str) -> str:
 		"""Look for a lease object with given mac address and return the
 		assigned ip address.
 
-		@type mac: str
-		@rtype: str or None
 		@raises ValueError:
 		@raises OmapiError:
 		@raises OmapiErrorNotFound: if no lease object with the given mac could be found
@@ -1106,14 +962,12 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		try:
 			return res["ip-address"]
 		except KeyError:
-			raise OmapiErrorAttributeNotFound()
+			raise OmapiErrorAttributeNotFound() from None
 
-	def lookup_mac(self, ip):
+	def lookup_mac(self, ip: str) -> str:
 		"""Look up a lease object with given ip address and return the
 		associated mac address.
 
-		@type ip: str
-		@rtype: str or None
 		@raises ValueError:
 		@raises OmapiError:
 		@raises OmapiErrorNotFound: if no lease object with the given ip could be found
@@ -1124,14 +978,12 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		try:
 			return res["hardware-address"]
 		except KeyError:
-			raise OmapiErrorAttributeNotFound()
+			raise OmapiErrorAttributeNotFound() from None
 
-	def lookup_host(self, name):
+	def lookup_host(self, name: str) -> dict:
 		"""Look for a host object with given name and return the
 		name, mac, and ip address
 
-		@type name: str
-		@rtype: dict or None
 		@raises ValueError:
 		@raises OmapiError:
 		@raises OmapiErrorNotFound: if no host object with the given name could be found
@@ -1142,14 +994,28 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		try:
 			return dict(ip=res["ip-address"], mac=res["hardware-address"], hostname=res["name"].decode('utf-8'))
 		except KeyError:
-			raise OmapiErrorAttributeNotFound()
+			raise OmapiErrorAttributeNotFound() from None
 
-	def lookup_host_host(self, mac):
+	def lookup_host_by_ip(self, ip: str) -> dict:
+		"""Look for a host object with given ip address and return the
+		name, mac, and ip address
+
+		@raises ValueError:
+		@raises OmapiError:
+		@raises OmapiErrorNotFound: if no host object with the given ip could be found
+		@raises OmapiErrorAttributeNotFound: if lease could be found, but objects lacks ip, mac or name
+		@raises socket.error:
+		"""
+		res = self.lookup_by_host(ip=ip)
+		try:
+			return dict(ip=res["ip-address"], mac=res["hardware-address"], hostname=res["name"].decode('utf-8'))
+		except KeyError:
+			raise OmapiErrorAttributeNotFound() from None
+
+	def lookup_host_host(self, mac: str) -> dict:
 		"""Look for a host object with given mac address and return the
 		name, mac, and ip address
 
-		@type mac: str
-		@rtype: dict or None
 		@raises ValueError:
 		@raises OmapiError:
 		@raises OmapiErrorNotFound: if no host object with the given mac address could be found
@@ -1160,13 +1026,11 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		try:
 			return dict(ip=res["ip-address"], mac=res["hardware-address"], name=res["name"].decode('utf-8'))
 		except KeyError:
-			raise OmapiErrorAttributeNotFound()
+			raise OmapiErrorAttributeNotFound() from None
 
-	def lookup_hostname(self, ip):
+	def lookup_hostname(self, ip: str) -> str:
 		"""Look up a lease object with given ip address and return the associated client hostname.
 
-		@type ip: str
-		@rtype: str or None
 		@raises ValueError:
 		@raises OmapiError:
 		@raises OmapiErrorNotFound: if no lease object with the given ip address could be found
@@ -1178,21 +1042,34 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 			raise OmapiErrorAttributeNotFound()
 		return res["client-hostname"].decode('utf-8')
 
-	def lookup_by_host(self, **kwargs):
-		return self.__lookup("host", **kwargs)
+	def lookup_failoverstate(self, name: str, attribute: str) -> object:
+		"""Look up a failover-state object with given peer name and return the associated attribute.
 
-	def lookup_by_lease(self, **kwargs):
-		return self.__lookup("lease", **kwargs)
+		@raises ValueError:
+		@raises OmapiError:
+		@raises OmapiErrorNotFound: if no failover-state object with the given name could be found
+		@raises OmapiErrorAttributeNotFound: if failover-state object could be found, but object lacks the attribute
+		@raises socket.error:
+		"""
+		res = self.lookup_by_failoverstate(name=name)
+		if attribute not in res:
+			raise OmapiErrorAttributeNotFound()
+		return res[attribute]
 
-	def __lookup(self, ltype, **kwargs):
+	def lookup_by_host(self, *, raw: bool = False, **kwargs: str) -> dict:
+		return self.__lookup("host", raw=raw, **kwargs)
+
+	def lookup_by_lease(self, *, raw: bool = False, **kwargs: str) -> dict:
+		return self.__lookup("lease", raw=raw, **kwargs)
+
+	def lookup_by_failoverstate(self, *, raw: bool = False, **kwargs: str) -> dict:
+		return self.__lookup("failover-state", raw=raw, **kwargs)
+
+	def __lookup(self, ltype: str, *, raw: bool = False, **kwargs: str) -> dict:
 		"""Generic Lookup function
 
-		@type ltype: str
-		@type rvalues: list
-		@type ip: str
-		@type mac: str
-		@type name: str
-		@rtype: dict or str (if len(rvalues) == 1) or None
+		@param raw: if True, return the object attributes undecoded (bytes keys
+				and values) instead of the human readable representation
 		@raises ValueError:
 		@raises OmapiError:
 		@raises OmapiErrorNotFound: if no host object with the given name
@@ -1200,11 +1077,9 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		@raises socket.error:
 		"""
 		ltype_utf = ltype.encode("utf-8")
-		assert ltype_utf in [b"host", b"lease"]
+		assert ltype_utf in [b"host", b"lease", b"failover-state"]
 		msg = OmapiMessage.open(ltype_utf)
 		for k in kwargs:
-			if k == "raw":
-				continue
 			_k = k.replace("_", "-")
 			if _k in ["ip", "ip-address"]:
 				msg.obj.append((b"ip-address", pack_ip(kwargs[k])))
@@ -1214,34 +1089,31 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 			elif _k == "name":
 				msg.obj.append((b"name", kwargs[k].encode('utf-8')))
 			else:
-				msg.obj.append((str(_k).encode(), kwargs[k].encode('utf-8')))
+				msg.obj.append((_k.encode(), kwargs[k].encode('utf-8')))
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiErrorNotFound()
-		if "raw" in kwargs and kwargs["raw"]:
+		if raw:
 			return dict(response.obj)
-		res = dict()
-		for k, v in dict(response.obj).items():
-			_k = k.decode('utf-8')
+		res: "dict[str, object]" = {}
+		for key, rawvalue in dict(response.obj).items():
+			_k = key.decode('utf-8')
+			value: object = rawvalue
 			try:
 				if _k == "ip-address":
-					v = unpack_ip(v)
-				elif _k in ["hardware-address"]:
-					v = unpack_mac(v)
-				elif _k in ["starts", "ends", "tstp", "tsfp", "atsfp", "cltt", "subnet", "pool", "state", "hardware-type"]:
-					v = struct.unpack(">I", v)[0]
-				elif _k in ["flags"]:
-					v = struct.unpack(">I", v)[0]
+					value = unpack_ip(rawvalue)
+				elif _k == "hardware-address":
+					value = unpack_mac(rawvalue)
+				elif _k in ["starts", "ends", "tstp", "tsfp", "atsfp", "cltt", "subnet", "pool", "state", "hardware-type", "flags"]:
+					value = struct.unpack(">I", rawvalue)[0]
 			except struct.error:
 				pass
-			res[_k] = v
+			res[_k] = value
 		return res
 
-	def add_host(self, ip, mac):
+	def add_host(self, ip: str, mac: str) -> None:
 		"""Create a host object with given ip address and and mac address.
 
-		@type ip: str
-		@type mac: str
 		@raises ValueError:
 		@raises OmapiError:
 		@raises socket.error:
@@ -1256,12 +1128,8 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError("add failed")
 
-	def add_host_supersede_name(self, ip, mac, name):  # pylint:disable=E0213
+	def add_host_supersede_name(self, ip: str, mac: str, name: str) -> None:
 		"""Add a host with a fixed-address and override its hostname with the given name.
-		@type self: Omapi
-		@type ip: str
-		@type mac: str
-		@type name: str
 		@raises ValueError:
 		@raises OmapiError:
 		@raises socket.error:
@@ -1273,14 +1141,13 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
 		msg.obj.append((b"ip-address", pack_ip(ip)))
 		msg.obj.append((b"name", name.encode('utf-8')))
-		msg.obj.append((b"statements", 'supersede host-name "{0}";'.format(name).encode('utf-8')))
+		msg.obj.append((b"statements", f'supersede host-name "{name}";'.encode('utf-8')))
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError("add failed")
 
-	def add_host_without_ip(self, mac):
+	def add_host_without_ip(self, mac: str) -> None:
 		"""Create a host object with given mac address without assigning a static ip address.
-		@type mac: str
 		@raises ValueError:
 		@raises OmapiError:
 		@raises socket.error:
@@ -1294,16 +1161,10 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError("add failed")
 
-	def add_host_supersede(self, ip, mac, name, hostname=None, router=None, domain=None):  # pylint:disable=too-many-arguments
+	def add_host_supersede(self, ip: str, mac: str, name: str, hostname: "str | None" = None, router: "str | None" = None, domain: "str | None" = None) -> None:  # pylint:disable=too-many-arguments
 		"""Create a host object with given ip, mac, name, hostname, router and
 		domain. hostname, router and domain are optional arguments.
 
-		@type ip: str
-		@type mac: str
-		@type name: str
-		@type hostname: str
-		@type router: str
-		@type domain: str
 		@raises OmapiError:
 		@raises socket.error:
 		"""
@@ -1311,16 +1172,16 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 
 		msg = OmapiMessage.open(b"host")
 		msg.message.append((b"create", struct.pack("!I", 1)))
-		msg.obj.append((b"name", name))
+		msg.obj.append((b"name", name.encode('utf-8')))
 		msg.obj.append((b"hardware-address", pack_mac(mac)))
 		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
 		msg.obj.append((b"ip-address", pack_ip(ip)))
 		if hostname:
-			stmts.append('supersede host-name "{0}";\n '.format(hostname))
+			stmts.append(f'supersede host-name "{hostname}";\n ')
 		if router:
-			stmts.append('supersede routers {0};\n '.format(router))
+			stmts.append(f'supersede routers {router};\n ')
 		if domain:
-			stmts.append('supersede domain-name "{0}";'.format(domain))
+			stmts.append(f'supersede domain-name "{domain}";')
 		if stmts:
 			encoded_stmts = "".join(stmts).encode("utf-8")
 			msg.obj.append((b"statements", encoded_stmts))
@@ -1329,10 +1190,9 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError("add failed")
 
-	def del_host(self, mac):
+	def del_host(self, mac: str) -> None:
 		"""Delete a host object with with given mac address.
 
-		@type mac: str
 		@raises ValueError:
 		@raises OmapiError:
 		@raises OmapiErrorNotFound: if no lease object with the given
@@ -1351,53 +1211,41 @@ class Omapi(object):  # pylint:disable=too-many-public-methods
 		if response.opcode != OMAPI_OP_STATUS:
 			raise OmapiError("delete failed")
 
-	def add_group(self, groupname, statements):
-		"""
-		Adds a group
-		@type groupname: bytes
-		@type statements: str
-		"""
+	def add_group(self, groupname: str, statements: str) -> None:
+		"""Adds a group."""
 		msg = OmapiMessage.open(b"group")
-		msg.message.append(("create", struct.pack("!I", 1)))
-		msg.obj.append(("name", groupname))
-		msg.obj.append(("statements", statements))
+		msg.message.append((b"create", struct.pack("!I", 1)))
+		msg.obj.append((b"name", groupname.encode('utf-8')))
+		msg.obj.append((b"statements", statements.encode('utf-8')))
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError("add group failed")
 
-	def add_host_with_group(self, ip, mac, groupname):
-		"""
-		Adds a host with given ip and mac in a group named groupname
-		@type ip: str
-		@type mac: str
-		@type groupname: str
-		"""
+	def add_host_with_group(self, ip: str, mac: str, groupname: str) -> None:
+		"""Adds a host with given ip and mac in a group named groupname."""
 		msg = OmapiMessage.open(b"host")
-		msg.message.append(("create", struct.pack("!I", 1)))
-		msg.message.append(("exclusive", struct.pack("!I", 1)))
-		msg.obj.append(("hardware-address", pack_mac(mac)))
-		msg.obj.append(("hardware-type", struct.pack("!I", 1)))
-		msg.obj.append(("ip-address", pack_ip(ip)))
-		msg.obj.append(("group", groupname))
+		msg.message.append((b"create", struct.pack("!I", 1)))
+		msg.message.append((b"exclusive", struct.pack("!I", 1)))
+		msg.obj.append((b"hardware-address", pack_mac(mac)))
+		msg.obj.append((b"hardware-type", struct.pack("!I", 1)))
+		msg.obj.append((b"ip-address", pack_ip(ip)))
+		msg.obj.append((b"group", groupname.encode('utf-8')))
 		response = self.query_server(msg)
 		if response.opcode != OMAPI_OP_UPDATE:
 			raise OmapiError("add failed")
 
-	def change_group(self, name, group):
-		"""Change the group of a host given the name of the host.
-		@type name: str
-		@type group: str
-		"""
+	def change_group(self, name: str, group: str) -> None:
+		"""Change the group of a host given the name of the host."""
 		m1 = OmapiMessage.open(b"host")
-		m1.update_object(dict(name=name))
+		m1.update_object({b"name": name.encode('utf-8')})
 		r1 = self.query_server(m1)
 		if r1.opcode != OMAPI_OP_UPDATE:
-			raise OmapiError("opening host %s failed" % name)
+			raise OmapiError(f"opening host {name} failed")
 		m2 = OmapiMessage.update(r1.handle)
-		m2.update_object(dict(group=group))
+		m2.update_object({b"group": group.encode('utf-8')})
 		r2 = self.query_server(m2)
 		if r2.opcode != OMAPI_OP_UPDATE:
-			raise OmapiError("changing group of host %s to %s failed" % (name, group))
+			raise OmapiError(f"changing group of host {name} to {group} failed")
 
 
 if __name__ == "__main__":
