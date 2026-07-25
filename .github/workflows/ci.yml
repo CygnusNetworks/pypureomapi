@@ -18,8 +18,50 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install
-        run: python -m pip install --upgrade pip .[test]
-      - name: Run tests
-        run: python -m pytest -v
+        run: python -m pip install --upgrade pip .[test] pytest-cov
+      - name: Run tests with coverage
+        run: python -m pytest -v --cov=pypureomapi --cov-config=.coveragerc --cov-report=term-missing --cov-fail-under=95
       - name: Run doctests (module scope)
         run: python pypureomapi.py -v
+
+  integration:
+    name: Integration (real ISC dhcpd)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ISC DHCP server
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends isc-dhcp-server
+      - name: Configure and start dhcpd
+        run: |
+          set -e
+          # Unload the dhcpd AppArmor profile so a manual start can open its
+          # config/lease files (otherwise: "Can't open ... for append").
+          sudo apparmor_parser -R /etc/apparmor.d/usr.sbin.dhcpd 2>/dev/null || true
+          # Derive a subnet from the runner's primary interface. No range is
+          # declared, so dhcpd never offers addresses — it only serves OMAPI.
+          CIDR=$(ip -o -f inet addr show eth0 | awk '{print $4}')
+          read NETADDR MASK < <(python3 -c "import ipaddress; n=ipaddress.ip_network('$CIDR', strict=False); print(n.network_address, n.netmask)")
+          KEY=$(head -c16 /dev/urandom | base64)
+          sudo tee /etc/dhcp/dhcpd.conf >/dev/null <<EOF
+          authoritative;
+          omapi-port 7911;
+          key defomapi { algorithm hmac-md5; secret $KEY; };
+          omapi-key defomapi;
+          subnet $NETADDR netmask $MASK { }
+          EOF
+          sudo touch /var/lib/dhcp/dhcpd.leases
+          sudo /usr/sbin/dhcpd -4 -cf /etc/dhcp/dhcpd.conf -lf /var/lib/dhcp/dhcpd.leases eth0 -pf /run/dhcpd.pid
+          sleep 1
+          echo "OMAPI_TEST_KEY=$KEY" >> "$GITHUB_ENV"
+      - name: Install package
+        run: python -m pip install --upgrade pip .[test]
+      - name: Run integration tests
+        env:
+          OMAPI_TEST_HOST: 127.0.0.1
+          OMAPI_TEST_KEYNAME: defomapi
+        run: python -m pytest tests/test_integration.py -v
