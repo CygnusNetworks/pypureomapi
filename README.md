@@ -11,6 +11,26 @@ It can be used to query and modify leases and other objects exported by an ISC D
 The interaction can be authenticated using HMAC-MD5. Besides basic ready to use operations, custom interaction can be implemented with limited effort. 
 It provides error checking and extensibility.
 
+## Installation
+
+pypureomapi requires Python 3.11 or newer and has no runtime dependencies.
+
+From PyPI:
+
+```
+pip install pypureomapi
+```
+
+Distribution packages are built automatically for every
+[GitHub release](https://github.com/CygnusNetworks/pypureomapi/releases) and
+attached as assets:
+
+  * `.deb` for Debian 12, Debian 13 and Ubuntu 24.04
+  * `.rpm` for Fedora and Enterprise Linux 9 (Rocky/Alma)
+
+On Enterprise Linux 9 the default `python3` (3.9) is too old, so the package is
+built against `python3.12` and is named `python3.12-pypureomapi`.
+
 ## Server side configugration for ISC DHCP3
 
 To allow a OMAPI access to your ISC DHCP3 DHCP Server you should define the following in your dhcpd.conf config file:
@@ -175,3 +195,34 @@ r2 = o.query_server(m2)
 We receive a new message and need to check the returned `opcode` which should be `OMAPI_OP_UPDATE` again. Now we have a complete sequence.
 
 As can be seen, the OMAPI protocol permits flexible interaction and it would be unreasonable to include every possibility as library functions. Instead you are encouraged to subclass the `Omapi` class and define your own methods. If they prove useful in multiple locations, please submit them to the issue tracker.
+
+# Development and packaging
+
+Run the test suite (unit tests plus the doctests embedded in the module):
+
+```
+pip install -e .[test]
+pytest
+```
+
+Building the distribution artifacts:
+
+```
+# Python sdist + wheel
+python -m build
+
+# Debian package (on Debian/Ubuntu, in a checkout)
+dpkg-buildpackage -us -uc -b
+
+# RPM (on Fedora; on EL9 add: -D "python3_pkgversion 3.12")
+python -m build --sdist
+cp dist/pypureomapi-*.tar.gz ~/rpmbuild/SOURCES/
+rpmbuild -ba pypureomapi.spec
+```
+
+The version is single-sourced from the git tag on release:
+`packaging/set-version.sh <version>` stamps it into `pyproject.toml`, the
+module, the RPM spec and `debian/changelog`. Releasing is automated — publishing
+a GitHub release triggers [`.github/workflows/release.yml`](.github/workflows/release.yml),
+which uploads the sdist and wheel to PyPI and attaches the `.deb`/`.rpm` packages
+to the release.

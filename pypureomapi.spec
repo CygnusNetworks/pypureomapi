@@ -1,48 +1,51 @@
 %define srcname pypureomapi
 %define version 1.0
 %define release 1
-%define sum Cygnus Networks GmbH %{srcname} package
 
 Name:           python-%{srcname}
 Version:        %{version}
 Release:        %{release}%{?dist}
-Summary:        %{sum}
+Summary:        ISC DHCP OMAPI protocol implementation in Python
 License:        Apache-2.0
-Source0:        python-%{srcname}-%{version}.tar.gz
+URL:            https://github.com/CygnusNetworks/pypureomapi
+Source0:        %{srcname}-%{version}.tar.gz
 
 BuildArch:      noarch
 
-BuildRequires:  python3-devel python3-setuptools python3-pip
-%if 0%{?with_check}
-BuildRequires:  python3-pytest
-%endif # with_check
+# python3_pkgversion defaults to 3 (Fedora); override to e.g. 3.12 on EL9,
+# where the default python3 (3.9) does not satisfy requires-python >= 3.11.
+BuildRequires:  python%{python3_pkgversion}-devel
+BuildRequires:  pyproject-rpm-macros
 
-%package -n python3-%{srcname}
-Summary:        %{sum}
-Requires:       python3-setuptools
+%global source_date_epoch_from_changelog 0
 
-%description
-%{sum}
+%global _description %{expand:
+pypureomapi is a pure-Python implementation of the ISC DHCP OMAPI protocol.
+It can be used to query and modify leases and other objects exported by an
+ISC DHCP server, with HMAC-MD5 authenticated interaction.}
 
-%description -n python3-%{srcname}
-%{sum}
+%description %_description
+
+%package -n python%{python3_pkgversion}-%{srcname}
+Summary:        %{summary}
+%description -n python%{python3_pkgversion}-%{srcname} %_description
 
 %prep
-%setup -q -n python-%{srcname}-%{version}
+%autosetup -n %{srcname}-%{version}
+
+%generate_buildrequires
+%pyproject_buildrequires -x test
 
 %build
-%py3_build
+%pyproject_wheel
 
 %install
-%py3_install
+%pyproject_install
+%pyproject_save_files pypureomapi
 
-%if 0%{?with_check}
 %check
-LANG=en_US.utf8 py.test-%{python3_version} -vv tests
-%endif # with_check
+%pytest
 
-%files -n python3-%{srcname}
+%files -n python%{python3_pkgversion}-%{srcname} -f %{pyproject_files}
 %license LICENSE.md
-%{python3_sitelib}/%{srcname}.py*
-%{python3_sitelib}/%{srcname}-%{version}*.egg-info
-%{python3_sitelib}/__pycache__/%{srcname}*.py*
+%doc README.md
