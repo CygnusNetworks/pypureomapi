@@ -39,8 +39,9 @@ jobs:
       - name: Configure and start dhcpd
         run: |
           set -e
-          # Best-effort: relax the dhcpd AppArmor profile so a manual start works.
-          sudo aa-complain /usr/sbin/dhcpd 2>/dev/null || true
+          # Unload the dhcpd AppArmor profile so a manual start can open its
+          # config/lease files (otherwise: "Can't open ... for append").
+          sudo apparmor_parser -R /etc/apparmor.d/usr.sbin.dhcpd 2>/dev/null || true
           # Derive a subnet from the runner's primary interface. No range is
           # declared, so dhcpd never offers addresses — it only serves OMAPI.
           CIDR=$(ip -o -f inet addr show eth0 | awk '{print $4}')
