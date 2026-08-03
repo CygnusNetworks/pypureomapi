@@ -1,5 +1,5 @@
 %define srcname pypureomapi
-%define version 1.0
+%define version 1.1
 %define release 1
 
 Name:           python-%{srcname}

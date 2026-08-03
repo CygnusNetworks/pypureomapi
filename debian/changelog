@@ -1,3 +1,11 @@
+pypureomapi (1.1) unstable; urgency=medium
+
+  * Support variable-length hardware addresses (6 to 16 bytes) in pack_mac
+    and unpack_mac, e.g. 8 byte EUI-64 addresses of IEEE 802.15.4 devices
+    (closes github issue #49)
+
+ -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Mon, 03 Aug 2026 15:31:38 +0200
+
 pypureomapi (1.0) UNRELEASED; urgency=medium
 
   * New upstream release

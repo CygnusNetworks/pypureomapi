@@ -50,7 +50,7 @@ _U = TypeVar("_U")
 __author__ = "Helmut Grohne, Dr. Torge Szczepanek"
 __copyright__ = "Cygnus Networks GmbH"
 __license__ = "Apache-2.0"
-__version__ = "1.0"
+__version__ = "1.1"
 __maintainer__ = "Dr. Torge Szczepanek"
 __email__ = "debian@cygnusnetworks.de"
 
@@ -652,15 +652,18 @@ __all__.append("pack_mac")
 
 
 def pack_mac(macstr: str) -> bytes:
-	"""Converts a mac address given in colon delimited notation to a
-	six byte string in network byte order.
+	"""Converts a hardware address given in colon delimited notation to
+	a 6 to 16 byte string in network byte order. Besides 6 byte Ethernet
+	MAC addresses this also covers e.g. 8 byte EUI-64 addresses.
 
 	>>> pack_mac("30:31:32:33:34:35") == b'012345'
 	True
+	>>> pack_mac("00:12:4B:00:0B:27:67:4B").hex()
+	'00124b000b27674b'
 	>>> pack_mac("bad")
 	Traceback (most recent call last):
 	...
-	ValueError: given mac addresses has an invalid number of colons
+	ValueError: given mac address has an invalid number of colon separated groups (expected 6 to 16)
 
 
 	@raises ValueError: for badly formatted mac addresses
@@ -668,32 +671,36 @@ def pack_mac(macstr: str) -> bytes:
 	if not isinstance(macstr, str):
 		raise ValueError("given mac addresses is not a string")
 	parts = macstr.split(":")
-	if len(parts) != 6:
-		raise ValueError("given mac addresses has an invalid number of colons")
-	return bytes(int(part, 16) for part in parts)  # raises ValueError
+	if not 6 <= len(parts) <= 16:
+		raise ValueError("given mac address has an invalid number of colon separated groups (expected 6 to 16)")
+	if not all(1 <= len(part) <= 2 and all(c in "0123456789abcdefABCDEF" for c in part) for part in parts):
+		raise ValueError("given mac address contains an invalid group (expected 1 or 2 hex digits per group)")
+	return bytes(int(part, 16) for part in parts)
 
 
 __all__.append("unpack_mac")
 
 
-def unpack_mac(sixbytes: bytes) -> str:
-	"""Converts a mac address given in a six byte string in network
-	byte order to a string in colon delimited notation.
+def unpack_mac(data: bytes) -> str:
+	"""Converts a hardware address given in a 1 to 16 byte string in
+	network byte order to a string in colon delimited notation.
 
 	>>> unpack_mac(b"012345")
 	'30:31:32:33:34:35'
-	>>> unpack_mac(b"bad")
+	>>> unpack_mac(bytes.fromhex("00124b000b27674b"))
+	'00:12:4b:00:0b:27:67:4b'
+	>>> unpack_mac(b"")
 	Traceback (most recent call last):
 	...
-	ValueError: given buffer is not exactly six bytes long
+	ValueError: given buffer must be 1 to 16 bytes long
 
 	@raises ValueError: for bad input
 	"""
-	if not isinstance(sixbytes, bytes):
-		raise ValueError("given buffer is not a string")
-	if len(sixbytes) != 6:
-		raise ValueError("given buffer is not exactly six bytes long")
-	return ":".join(f"{x:02x}" for x in sixbytes)
+	if not isinstance(data, bytes):
+		raise ValueError("given buffer is not a bytes object")
+	if not 1 <= len(data) <= 16:
+		raise ValueError("given buffer must be 1 to 16 bytes long")
+	return ":".join(f"{x:02x}" for x in data)
 
 
 __all__.append("encode_classless_static_routes")

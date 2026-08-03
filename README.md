@@ -157,6 +157,8 @@ These special functions use:
   
 which provide full access to complete lease data. 
 
+Hardware addresses are accepted in colon delimited notation with 6 to 16 bytes, so besides regular 6 byte Ethernet MAC addresses e.g. 8 byte EUI-64 addresses (as used by IEEE 802.15.4 devices) are supported as well.
+
 ## Add and delete host objects
 
 For adding and deleting host objects (static DHCP leases), there are multiple functions:

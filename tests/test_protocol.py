@@ -198,13 +198,30 @@ def test_pack_unpack_mac_roundtrip_and_errors():
 	with pytest.raises(ValueError):
 		pack_mac(1234)  # not a string
 	with pytest.raises(ValueError):
-		pack_mac("aa:bb:cc")  # wrong number of colons
+		pack_mac("aa:bb:cc")  # too few groups
+	with pytest.raises(ValueError):
+		pack_mac(":".join(["00"] * 17))  # too many groups
 	with pytest.raises(ValueError):
 		pack_mac("zz:bb:cc:dd:ee:ff")  # invalid hex
 	with pytest.raises(ValueError):
+		pack_mac(" 0a:bb:cc:dd:ee:ff")  # whitespace in group
+	with pytest.raises(ValueError):
+		pack_mac("1ff:bb:cc:dd:ee:ff")  # group out of range
+	assert pack_mac("0:1:2:3:4:5") == bytes(range(6))  # single hex digit groups
+	assert pack_mac(":".join(["ab"] * 16)) == b"\xab" * 16
+	with pytest.raises(ValueError):
 		unpack_mac("notbytes")
 	with pytest.raises(ValueError):
-		unpack_mac(b"short")
+		unpack_mac(b"")
+	with pytest.raises(ValueError):
+		unpack_mac(b"\x00" * 17)
+
+
+def test_pack_unpack_mac_eui64():
+	# issue #49: 8 byte EUI-64 hardware addresses (e.g. IEEE 802.15.4)
+	packed = pack_mac("00:12:4B:00:0B:27:67:4B")
+	assert packed == bytes.fromhex("00124b000b27674b")
+	assert unpack_mac(packed) == "00:12:4b:00:0b:27:67:4b"
 
 
 # --- classless static routes (issue #31) ------------------------------------
