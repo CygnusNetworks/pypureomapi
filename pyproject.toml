@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pypureomapi"
-version = "1.0"
+version = "1.1"
 description = "ISC DHCP OMAPI protocol implementation in Python"
 readme = "README.md"
 requires-python = ">=3.11"

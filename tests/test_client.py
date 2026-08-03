@@ -142,6 +142,26 @@ def test_lookup_by_lease_decodes_attributes():
 		omapi.close()
 
 
+def test_lookup_by_lease_eui64_mac():
+	# issue #49: 8 byte EUI-64 hardware addresses decode and encode cleanly
+	obj = [
+		(b"ip-address", pack_ip("192.168.10.21")),
+		(b"hardware-address", pack_mac("00:12:4b:00:0b:27:67:4b")),
+	]
+	with FakeOmapiServer(const(OmapiMessage(opcode=OMAPI_OP_UPDATE, obj=obj))) as srv:
+		omapi = connect(srv.port)
+		res = omapi.lookup_by_lease(mac="00:12:4b:00:0b:27:67:4b")
+		assert res["hardware-address"] == "00:12:4b:00:0b:27:67:4b"
+		omapi.close()
+
+
+def test_add_host_eui64_mac():
+	with FakeOmapiServer(const(OmapiMessage(opcode=OMAPI_OP_UPDATE))) as srv:
+		omapi = connect(srv.port)
+		omapi.add_host("192.168.0.9", "00:12:4b:00:0b:27:67:4b")  # no exception
+		omapi.close()
+
+
 def test_lookup_by_lease_raw():
 	packed = pack_ip("192.168.10.20")
 	obj = [(b"ip-address", packed)]
